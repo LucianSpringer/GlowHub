@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Sparkles, ShoppingBag, ArrowRight, Star, Heart,
-  ShieldCheck, Truck, Percent, Zap, CheckCircle2, Menu, X, Instagram
-} from 'lucide-react';
-import { useBioMatrix } from './useBioMatrix'; // Assumes previous hook exists
+import { useState, useEffect } from 'react';
 
-// --- 1. CONFIGURATION VECTORS (High Density Data) ---
+import {
+  Sparkles, ShoppingBag, Star, Heart,
+  ShieldCheck, Truck, Percent, Zap, CheckCircle2, Instagram
+} from 'lucide-react';
+import { useBioMatrix, SkinVector } from './useBioMatrix';
+
+// --- 1. CONFIGURATION VECTORS ---
 
 const THEME = {
   colors: {
@@ -15,7 +16,7 @@ const THEME = {
     peach: '#FFF0E6',
     text: '#1F2937'
   },
-  fonts: 'font-sans' // Poppins assumed loaded in index.html
+  fonts: 'font-sans'
 };
 
 const ADVANTAGE_VECTORS = [
@@ -78,8 +79,8 @@ const TESTIMONIAL_DATA = [
 // --- 2. HIGH-YIELD COMPONENTS ---
 
 const Navbar = ({ scrolled }: { scrolled: boolean }) => (
-  <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'
-    }`}>
+  <nav className={`fixed w - full z - 50 transition - all duration - 300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'
+    } `}>
     <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
       <div className="flex items-center gap-2">
         <div className="bg-[#FF6B9D] p-1.5 rounded-lg text-white">
@@ -90,7 +91,6 @@ const Navbar = ({ scrolled }: { scrolled: boolean }) => (
         </span>
       </div>
 
-      {/* Desktop Menu */}
       <div className="hidden md:flex gap-8 text-sm font-medium text-slate-600">
         <a href="#home" className="hover:text-[#FF6B9D] transition-colors">Home</a>
         <a href="#brands" className="hover:text-[#FF6B9D] transition-colors">Brand Lokal</a>
@@ -108,7 +108,6 @@ const Navbar = ({ scrolled }: { scrolled: boolean }) => (
 
 const HeroSection = () => (
   <section id="home" className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden bg-[#FFF0E6]">
-    {/* Background Overlay Logic */}
     <div className="absolute inset-0 z-0">
       <div className="absolute inset-0 bg-gradient-to-r from-[#F8BFBF]/80 via-white/50 to-transparent z-10" />
       <img
@@ -138,9 +137,9 @@ const HeroSection = () => (
           <button className="bg-[#FF6B9D] text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-pink-600 transition-all shadow-xl shadow-pink-300/50 hover:-translate-y-1">
             Belanja Sekarang
           </button>
-          <button className="px-8 py-4 rounded-full font-bold text-[#FF6B9D] bg-white border-2 border-[#FF6B9D] hover:bg-pink-50 transition-all flex items-center justify-center gap-2">
+          <a href="#quiz" className="px-8 py-4 rounded-full font-bold text-[#FF6B9D] bg-white border-2 border-[#FF6B9D] hover:bg-pink-50 transition-all flex items-center justify-center gap-2">
             <Zap size={18} /> Ikuti Skin Quiz 30 Detik
-          </button>
+          </a>
         </div>
       </div>
     </div>
@@ -154,7 +153,6 @@ const BrandTicker = () => (
     </div>
     <div className="overflow-hidden relative">
       <div className="flex gap-12 items-center justify-center opacity-60 grayscale hover:grayscale-0 transition-all duration-500 flex-wrap px-6">
-        {/* Simulated Logos using Text for Demo Purity */}
         {['SCARLETT', 'SOMETHINC', 'AVOSKIN', 'AZARINE', 'WARDAH', 'WHITELAB', 'DEAR ME BEAUTY'].map((brand) => (
           <span key={brand} className="text-xl md:text-2xl font-black text-slate-300 hover:text-[#FF6B9D] cursor-pointer transition-colors">
             {brand}
@@ -188,13 +186,128 @@ const AdvantagesGrid = () => (
   </section>
 );
 
+// --- 3. RESTORED FEATURES: BioScanner & ProductGrid (The Engine) ---
+
+const BioScanner = ({ engine }: { engine: any }) => {
+  const vectors = [
+    { label: "Oily / Berminyak", flag: SkinVector.OILY },
+    { label: "Dry / Kering", flag: SkinVector.DRY },
+    { label: "Sensitive / Sensitif", flag: SkinVector.SENSITIVE },
+    { label: "Acne / Jerawat", flag: SkinVector.ACNE_PRONE },
+    { label: "Dull / Kusam", flag: SkinVector.DULLNESS },
+    { label: "Aging / Penuaan", flag: SkinVector.AGING },
+  ];
+
+  return (
+    <section id="quiz" className="py-20 px-6 scroll-mt-20">
+      <div className="max-w-5xl mx-auto bg-[#E0F2F1] rounded-[3rem] p-8 md:p-12 relative overflow-hidden border border-[#FF6B9D]/10">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/30 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3" />
+
+        <div className="relative z-10 text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            Bingung Pilih Skincare?
+          </h2>
+          <p className="text-slate-600 text-lg">
+            Input kondisi kulitmu di bawah ini. Algoritma GlowHub akan mencarikan
+            <span className="text-[#FF6B9D] font-bold"> Molecular Match</span> terbaik.
+          </p>
+        </div>
+
+        <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+          {vectors.map((v) => {
+            const isActive = (engine.activeMask & v.flag) === v.flag;
+            return (
+              <button
+                key={v.flag}
+                onClick={() => engine.toggleBioMarker(v.flag)}
+                className={`
+                                    relative px - 6 py - 4 rounded - xl text - left transition - all duration - 200 border - 2 flex justify - between items - center group
+                                    ${isActive
+                    ? 'border-[#FF6B9D] bg-white text-[#FF6B9D] shadow-lg scale-[1.02]'
+                    : 'border-white bg-white/60 text-slate-600 hover:border-pink-200 hover:bg-white'
+                  }
+`}
+              >
+                <div className="font-bold text-sm">{v.label}</div>
+                {isActive ? (
+                  <CheckCircle2 className="text-[#FF6B9D]" size={20} />
+                ) : (
+                  <div className="w-5 h-5 rounded-full border-2 border-slate-200 group-hover:border-pink-300" />
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const ProductGrid = ({ products, activeMask }: { products: any[], activeMask: number }) => (
+  <section className="max-w-7xl mx-auto px-6 pb-24">
+    {activeMask === 0 ? (
+      <div className="text-center p-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+        <Sparkles className="mx-auto text-slate-300 mb-4" size={48} />
+        <p className="text-slate-500 font-medium">Pilih bio-marker di atas untuk melihat rekomendasi produk.</p>
+      </div>
+    ) : (
+      <>
+        <div className="flex justify-between items-end mb-10 animate-fade-in-up">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Rekomendasi Personal</h2>
+            <p className="text-slate-500 text-sm mt-1">Berdasarkan analisa profil kulitmu</p>
+          </div>
+          <span className="bg-[#FF6B9D]/10 text-[#FF6B9D] px-4 py-1.5 rounded-full text-xs font-bold">
+            {products.length} MATCHES FOUND
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {products.map((p: any) => {
+            const matchScore = ((p.vectorMask & activeMask) !== 0);
+            return (
+              <div key={p.id} className="group bg-white rounded-3xl border border-slate-100 overflow-hidden hover:shadow-2xl hover:shadow-pink-100/50 transition-all duration-300 transform hover:-translate-y-1">
+                <div className="relative h-64 overflow-hidden bg-slate-100">
+                  <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  {matchScore && (
+                    <div className="absolute top-4 right-4 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
+                      <Sparkles size={10} /> {((p.molecularScore || 0.95) * 100).toFixed(0)}% MATCH
+                    </div>
+                  )}
+                </div>
+                <div className="p-6">
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{p.brand}</div>
+                  <h3 className="font-bold text-lg text-slate-900 mb-2 leading-tight">{p.name}</h3>
+
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {/* Simple visualization of flags matching */}
+                    {(p.vectorMask & SkinVector.OILY) ? <span className="text-[10px] px-2 py-1 bg-slate-100 rounded text-slate-500">Oily</span> : null}
+                    {(p.vectorMask & SkinVector.ACNE_PRONE) ? <span className="text-[10px] px-2 py-1 bg-slate-100 rounded text-slate-500">Acne</span> : null}
+                    {(p.vectorMask & SkinVector.SENSITIVE) ? <span className="text-[10px] px-2 py-1 bg-slate-100 rounded text-slate-500">Sensitive</span> : null}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-4 border-t border-slate-50">
+                    <div className="text-[#FF6B9D] font-bold text-lg">Rp {p.price.toLocaleString()}</div>
+                    <button className="bg-slate-900 text-white p-2.5 rounded-xl hover:bg-[#FF6B9D] transition-colors shadow-lg shadow-slate-200">
+                      <ShoppingBag size={18} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </>
+    )}
+  </section>
+);
+
 const TestimonialStream = () => (
   <section id="testi" className="py-24 bg-[#E0F2F1]/30">
     <div className="max-w-7xl mx-auto px-6">
       <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-slate-900">
         Ribuan Customer Sudah <span className="text-[#FF6B9D]">Glow Up</span>
       </h2>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {TESTIMONIAL_DATA.map((t) => (
           <div key={t.id} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative">
@@ -216,34 +329,6 @@ const TestimonialStream = () => (
   </section>
 );
 
-const QuizCallout = () => (
-  <section id="quiz" className="py-20 px-6">
-    <div className="max-w-5xl mx-auto bg-[#E0F2F1] rounded-[3rem] p-10 md:p-16 relative overflow-hidden flex flex-col md:flex-row items-center gap-12">
-      {/* Background Blob */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-white/30 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3"></div>
-
-      <div className="relative z-10 md:w-1/2">
-        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-          Bingung Pilih Skincare?
-        </h2>
-        <p className="text-slate-600 text-lg mb-8">
-          Kulit setiap orang itu unik. Ikuti Quiz 30 detik kami untuk mendapatkan rekomendasi paket yang dikurasi khusus untuk masalah kulitmu.
-        </p>
-        <button className="bg-[#FF6B9D] text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-pink-600 transition-all shadow-xl shadow-pink-500/20">
-          Mulai Quiz Sekarang
-        </button>
-      </div>
-
-      <div className="relative z-10 md:w-1/2 flex justify-center">
-        <div className="w-64 h-80 bg-white rounded-3xl shadow-2xl rotate-3 flex items-center justify-center border-4 border-white">
-          {/* Placeholder for Illustration */}
-          <span className="text-slate-300 font-bold">[Ilustrasi Quiz UI]</span>
-        </div>
-      </div>
-    </div>
-  </section>
-);
-
 const DropshipGateway = () => (
   <section id="dropship" className="py-24 bg-gradient-to-br from-[#FF6B9D] to-orange-400 text-white relative overflow-hidden">
     <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
@@ -251,7 +336,6 @@ const DropshipGateway = () => (
       <p className="text-xl mb-10 text-white/90">
         Jadi Dropshipper GlowHub! Keuntungan 20–40%, tanpa stok barang, dan materi promosi kami sediakan.
       </p>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-left">
         {[
           { title: "Profit 20-40%", desc: "Margin keuntungan tinggi tiap produk." },
@@ -265,7 +349,6 @@ const DropshipGateway = () => (
           </div>
         ))}
       </div>
-
       <button className="bg-white text-[#FF6B9D] px-10 py-4 rounded-full font-bold text-xl hover:bg-slate-50 transition-all shadow-2xl transform hover:-translate-y-1">
         Daftar Jadi Reseller Sekarang
       </button>
@@ -285,7 +368,6 @@ const Footer = () => (
           100% Lokal Terpercaya. Platform skincare kurasi terbaik untuk wanita Indonesia.
         </p>
       </div>
-
       <div>
         <h4 className="font-bold text-lg mb-4">Info</h4>
         <ul className="space-y-2 text-gray-400 text-sm">
@@ -294,7 +376,6 @@ const Footer = () => (
           <li><a href="#" className="hover:text-[#FF6B9D]">Syarat & Ketentuan</a></li>
         </ul>
       </div>
-
       <div>
         <h4 className="font-bold text-lg mb-4">Bantuan</h4>
         <a href="#" className="flex items-center gap-2 text-green-400 hover:text-green-300 font-semibold mb-4">
@@ -302,28 +383,28 @@ const Footer = () => (
           Chat WhatsApp
         </a>
       </div>
-
       <div>
         <h4 className="font-bold text-lg mb-4">Sosial Media</h4>
         <div className="flex gap-4">
           <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#FF6B9D] transition-colors cursor-pointer">
             <Instagram size={20} />
           </div>
-          {/* Add TikTok/etc here */}
         </div>
       </div>
     </div>
-
     <div className="max-w-7xl mx-auto px-6 text-center pt-8 border-t border-gray-800 text-sm text-gray-500">
       &copy; 2025 GlowHub Indonesia – 100% Lokal Terpercaya
     </div>
   </footer>
 );
 
-// --- 3. MAIN ASSEMBLY ---
+// --- 4. MAIN ASSEMBLY ---
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
+
+  // Wire up the engine (The Logic Layer)
+  const engine = useBioMatrix();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -332,14 +413,18 @@ export default function App() {
   }, []);
 
   return (
-    <div className={`min-h-screen bg-white text-[#1F2937] ${THEME.fonts}`}>
+    <div className={`min - h - screen bg - white text - [#1F2937] ${THEME.fonts} `}>
       <Navbar scrolled={scrolled} />
       <main>
         <HeroSection />
         <BrandTicker />
         <AdvantagesGrid />
+
+        {/* The Integrated Engine Sections */}
+        <BioScanner engine={engine} />
+        <ProductGrid products={engine.recommendations} activeMask={engine.activeMask} />
+
         <TestimonialStream />
-        <QuizCallout />
         <DropshipGateway />
       </main>
       <Footer />
