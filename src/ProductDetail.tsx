@@ -12,7 +12,8 @@ import {
 } from './ProductTelemetry';
 import type { ProductTelemetry } from './ProductTelemetry';
 import { CheckoutSimulationModal, type OrderSummary } from './commerce/CheckoutSimulationModal';
-import { ActiveMoleculeNode, MoleculeDiscoveryOverlay } from './commerce/MoleculeDiscoveryOverlay';
+import { ActiveMoleculeNode } from './commerce/MoleculeDiscoveryComponents';
+import { MoleculeDiscoveryOverlay } from './commerce/MoleculeDiscoveryOverlay';
 
 export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelectProduct }: {
     product: ProductTelemetry,
@@ -304,17 +305,17 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
             />
 
             {/* Molecule Discovery Overlay */}
-            <MoleculeDiscoveryOverlay
-                isOpen={moleculeFilter !== null}
-                onClose={() => setMoleculeFilter(null)}
-                ingredientId={moleculeFilter?.id || ''}
-                ingredientName={moleculeFilter?.name || ''}
-                currentProductId={product.id}
-                onProductSelect={(id) => {
-                    setMoleculeFilter(null);
-                    onSelectProduct(id);
-                }}
-            />
+            {moleculeFilter && (
+                <MoleculeDiscoveryOverlay
+                    ingredientId={moleculeFilter.id}
+                    currentProductId={product.id}
+                    onClose={() => setMoleculeFilter(null)}
+                    onSelectProduct={(id: string) => {
+                        setMoleculeFilter(null);
+                        onSelectProduct(id);
+                    }}
+                />
+            )}
         </div>
     );
 };

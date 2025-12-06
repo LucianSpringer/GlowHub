@@ -28,6 +28,8 @@ export interface Review {
     source: 'GlowHub' | 'Shopee' | 'Tokopedia';
     isVerified: boolean;
     timestamp: number;
+    productId?: string;
+    productName?: string;
 }
 
 export interface UsageStep {
@@ -70,7 +72,7 @@ const _PRODUCT_DB: ProductTelemetry[] = [
         basePrice: 55000, marketPrice: 75000, stockQty: 142, vectorMask: 18,
         ingredients: ['ING-01', 'ING-03'],
         media: [{ type: 'image', url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=500' }],
-        reviews: [{ id: 'R1', user: 'Siti A.', rating: 5, text: 'Jerawat kempes!', source: 'Shopee', isVerified: true, timestamp: Date.now() }],
+        reviews: [{ id: 'R1', user: 'Siti A.', rating: 5, text: 'Jerawat kempes! Produk ini bagus banget.', source: 'Shopee', isVerified: true, timestamp: Date.now(), productId: 'L-01', productName: 'Phyto-Biotic Serum' }],
         benefitClaims: ["Acne Reduction", "Sebum Control"],
         usage: [
             { order: 1, text: "Cleanse face", time: 'BOTH' },
@@ -83,7 +85,7 @@ const _PRODUCT_DB: ProductTelemetry[] = [
         basePrice: 85000, marketPrice: 115000, stockQty: 89, vectorMask: 22,
         ingredients: ['ING-01', 'ING-04', 'ING-06'],
         media: [{ type: 'image', url: 'https://images.unsplash.com/photo-1601049541289-9b3b7d5d7fb5?auto=format&fit=crop&q=80&w=500' }],
-        reviews: [{ id: 'R2', user: 'Budi', rating: 5, text: 'Tekstur ringan.', source: 'Tokopedia', isVerified: true, timestamp: Date.now() }],
+        reviews: [{ id: 'R2', user: 'Budi', rating: 5, text: 'Tekstur ringan, cepat menyerap!', source: 'Tokopedia', isVerified: true, timestamp: Date.now(), productId: 'L-02', productName: 'Niacinamide Barrier' }],
         benefitClaims: ["Brightening", "Skin Barrier"],
         usage: [{ order: 1, text: "Use after toner", time: 'BOTH' }, { order: 2, text: "Follow with moisturizer", time: 'BOTH' }]
     },
@@ -92,7 +94,7 @@ const _PRODUCT_DB: ProductTelemetry[] = [
         basePrice: 110000, marketPrice: 149000, stockQty: 34, vectorMask: 40,
         ingredients: ['ING-05', 'ING-02'],
         media: [{ type: 'image', url: 'https://images.unsplash.com/photo-1571781348782-92c8812e8836?auto=format&fit=crop&q=80&w=500' }],
-        reviews: [{ id: 'R3', user: 'Dina', rating: 4, text: 'Efektif tapi tingling.', source: 'GlowHub', isVerified: true, timestamp: Date.now() }],
+        reviews: [{ id: 'R3', user: 'Dina', rating: 4, text: 'Efektif tapi tingling di awal. Recommended!', source: 'GlowHub', isVerified: true, timestamp: Date.now(), productId: 'L-03', productName: 'Miraculous Retinol' }],
         benefitClaims: ["Anti-Aging", "Cell Renewal"],
         usage: [{ order: 1, text: "Apply thin layer", time: 'PM' }, { order: 2, text: "MUST use sunscreen next day", time: 'AM' }]
     },
@@ -178,3 +180,21 @@ export function getRelatedProducts(currentId: string): ProductTelemetry[] {
 export function getProductById(id: string) {
     return _PRODUCT_DB.find(p => p.id === id) || _PRODUCT_DB[0];
 }
+
+// Helper: Get all reviews for Testimonials section
+export function getGlobalReviews(): Review[] {
+    return _PRODUCT_DB.flatMap(p => p.reviews).filter(r => r.productId);
+}
+
+// Helper: Get products by ingredient ID
+export function getProductsByIngredient(ingredientId: string, excludeProductId?: string): ProductTelemetry[] {
+    return _PRODUCT_DB.filter(p =>
+        p.ingredients.includes(ingredientId) &&
+        p.id !== excludeProductId &&
+        p.stockQty > 0
+    );
+}
+
+// Export ingredient database for molecule lookup
+export const INGREDIENT_DB = _INGREDIENT_DB;
+

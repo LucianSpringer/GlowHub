@@ -1,23 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Star, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { getGlobalReviews, type Review } from '../ProductTelemetry';
 
-const _MOCK_REVIEWS = [
-    { id: 1, user: "Rina S.", rating: 5, text: "Jerawat batu kempes dalam 3 hari! Gila sih ini serum.", source: "Shopee", item: "Scarlett Acne Serum" },
-    { id: 2, user: "Dinda K.", rating: 5, text: "Pengiriman cepet banget, packaging aman bubble wrap tebel.", source: "Tokopedia", item: "Somethinc Toner" },
-    { id: 3, user: "Putri A.", rating: 4, text: "Baru coba seminggu, kulit berasa lebih plumpy.", source: "GlowHub Direct", item: "Avoskin Retinol" },
-];
+interface TestimonialsProps {
+    onProductSelect: (id: string) => void;
+}
 
-export const Testimonials = () => {
-    const [reviews] = useState(_MOCK_REVIEWS);
+export const Testimonials = ({ onProductSelect }: TestimonialsProps) => {
+    const [reviews, setReviews] = useState<Review[]>([]);
     const [syncStatus, setSyncStatus] = useState("SYNCED");
 
-    // Simulated WebSocket Sync
+    // Load real reviews from ProductTelemetry
     useEffect(() => {
+        setReviews(getGlobalReviews());
+
         const interval = setInterval(() => {
             setSyncStatus("PULLING DATA...");
             setTimeout(() => {
                 setSyncStatus("SYNCED");
-                // In a real app, this would append new data
             }, 1500);
         }, 15000);
         return () => clearInterval(interval);
@@ -41,9 +41,14 @@ export const Testimonials = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {reviews.map((t) => (
                         <div key={t.id} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-lg transition-all relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <ShoppingBag size={100} />
-                            </div>
+                            {/* ACTIONABLE CART ICON */}
+                            <button
+                                onClick={() => t.productId && onProductSelect(t.productId)}
+                                className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-100 group-hover:text-[#FF6B9D] transition-all cursor-pointer z-20"
+                                title="Shop this product"
+                            >
+                                <ShoppingBag size={40} />
+                            </button>
 
                             <div className="flex gap-1 mb-4 text-yellow-400">
                                 {[...Array(t.rating)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
@@ -58,9 +63,15 @@ export const Testimonials = () => {
                                         <CheckCircle2 size={10} className="text-emerald-500" /> Verified via {t.source}
                                     </div>
                                 </div>
-                                <div className="text-[10px] text-[#FF6B9D] font-bold mt-2 truncate">
-                                    {t.item}
-                                </div>
+                                {/* Product Link Text */}
+                                {t.productName && (
+                                    <div
+                                        onClick={() => t.productId && onProductSelect(t.productId)}
+                                        className="text-[10px] text-[#FF6B9D] font-bold mt-2 truncate cursor-pointer hover:underline"
+                                    >
+                                        {t.productName}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

@@ -14,6 +14,7 @@ import { AccessGate } from './components/AccessGate';
 import { StorefrontPage } from './commerce/StorefrontPage';
 import { CartDrawer } from './components/CartDrawer';
 import { FinancialHandshakeModal } from './components/FinancialHandshakeModal';
+import { MoleculeDiscoveryOverlay } from './commerce/MoleculeDiscoveryOverlay';
 
 // Engines & Logic
 import { useBioMatrix, SkinVector } from './useBioMatrix';
@@ -120,6 +121,9 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [cartPulse, setCartPulse] = useState(false);
+
+  // Molecule Discovery State
+  const [activeMolecule, setActiveMolecule] = useState<string | null>(null);
 
   const engine = useBioMatrix();
 
@@ -291,7 +295,7 @@ export default function App() {
             </div>
           </section>
 
-          <Testimonials />
+          <Testimonials onProductSelect={handleProductSelect} />
 
           <DropshipCTA onRegister={() => {
             setGateMode('REGISTER');
@@ -299,13 +303,23 @@ export default function App() {
           }} />
         </main>
       ) : view === 'PRODUCT' ? (
-        <ProductDetail
-          product={getProductById(selectedProductId!)}
-          isDropshipper={isDropshipper}
-          onBack={() => setView('LANDING')}
-          onSelectProduct={handleProductSelect}
-          onAddToCart={handleAddToCart}
-        />
+        <>
+          <ProductDetail
+            product={getProductById(selectedProductId!)}
+            isDropshipper={isDropshipper}
+            onBack={() => setView('LANDING')}
+            onSelectProduct={handleProductSelect}
+          />
+          {/* Molecule Discovery Overlay */}
+          {activeMolecule && (
+            <MoleculeDiscoveryOverlay
+              ingredientId={activeMolecule}
+              currentProductId={selectedProductId || undefined}
+              onClose={() => setActiveMolecule(null)}
+              onSelectProduct={handleProductSelect}
+            />
+          )}
+        </>
       ) : view === 'DASHBOARD' ? (
         <DropshipperDashboard onBack={() => setView('LANDING')} />
       ) : view === 'ADMIN' ? (
