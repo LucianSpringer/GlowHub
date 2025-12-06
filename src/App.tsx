@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogIn, Sparkles } from 'lucide-react';
+import { LogIn, Sparkles, LayoutDashboard } from 'lucide-react';
 
 // Components
 import { HeroSection } from './components/HeroSection';
@@ -8,6 +8,7 @@ import { Testimonials } from './components/Testimonials';
 import { DropshipCTA } from './components/DropshipCTA';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProductDetail } from './ProductDetail';
+import { DropshipperDashboard } from './dropship/DropshipperDashboard';
 
 // Engines & Logic
 import { useBioMatrix, SkinVector } from './useBioMatrix';
@@ -26,6 +27,11 @@ const Navbar = ({ scrolled, onLogin, userMode, setView }: any) => (
         <a href="#brands" className="hover:text-[#FF6B9D]">Brands</a>
         <a href="#quiz" className="hover:text-[#FF6B9D]">Quiz</a>
         <a href="#dropship" className="hover:text-[#FF6B9D]">Dropship</a>
+        {userMode === 'DROPSHIPPER' && (
+          <button onClick={() => setView('DASHBOARD')} className="flex items-center gap-1 text-pink-500 font-bold">
+            <LayoutDashboard size={14} /> Dashboard
+          </button>
+        )}
       </div>
       <button onClick={onLogin} className={`px-4 py-2 rounded-full text-xs font-bold border flex items-center gap-2 ${userMode === 'DROPSHIPPER' ? 'bg-slate-900 text-white' : 'bg-white border-slate-200 text-slate-600'}`}>
         <LogIn size={14} /> {userMode === 'DROPSHIPPER' ? 'Dropshipper Mode' : 'Login'}
@@ -44,7 +50,7 @@ const Footer = () => (
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
-  const [view, setView] = useState<'LANDING' | 'PRODUCT'>('LANDING');
+  const [view, setView] = useState<'LANDING' | 'PRODUCT' | 'DASHBOARD'>('LANDING');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [userMode, setUserMode] = useState<'GUEST' | 'DROPSHIPPER'>('GUEST');
 
@@ -137,13 +143,15 @@ export default function App() {
 
           <DropshipCTA onRegister={() => alert("Redirect to Registration Logic")} />
         </main>
-      ) : (
+      ) : view === 'PRODUCT' ? (
         <ProductDetail
           product={getProductById(selectedProductId!)}
           isDropshipper={userMode === 'DROPSHIPPER'}
           onBack={() => setView('LANDING')}
           onSelectProduct={handleProductSelect}
         />
+      ) : (
+        <DropshipperDashboard onBack={() => setView('LANDING')} />
       )}
       <Footer />
     </div>
