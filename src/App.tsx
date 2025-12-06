@@ -311,7 +311,7 @@ export default function App() {
       ) : view === 'ADMIN' ? (
         <AdminDashboard onBack={() => setView('LANDING')} />
       ) : (
-        <StorefrontPage onBack={() => setView('LANDING')} onProductSelect={handleProductSelect} />
+        <StorefrontPage onBack={() => setView('LANDING')} onProductSelect={handleProductSelect} userMode={isDropshipper ? 'DROPSHIPPER' : 'GUEST'} />
       )}
       <Footer />
     </div>

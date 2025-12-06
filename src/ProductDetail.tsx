@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-    ShoppingCart, Star, Info, TrendingUp,
+    ShoppingCart, Star, TrendingUp,
     CheckCircle2, RefreshCw, Download,
-    Clock, ListChecks, ArrowRight
+    Clock, ListChecks, ArrowRight, FlaskConical
 } from 'lucide-react';
 import {
     useSupplyChainResonance,
@@ -11,13 +11,14 @@ import {
     getRelatedProducts,
 } from './ProductTelemetry';
 import type { ProductTelemetry } from './ProductTelemetry';
+import { CheckoutSimulationModal, type OrderSummary } from './commerce/CheckoutSimulationModal';
+import { ActiveMoleculeNode, MoleculeDiscoveryOverlay } from './commerce/MoleculeDiscoveryOverlay';
 
-export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelectProduct, onAddToCart }: {
+export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelectProduct }: {
     product: ProductTelemetry,
     isDropshipper?: boolean,
     onBack: () => void,
-    onSelectProduct: (id: string) => void,
-    onAddToCart?: (product: ProductTelemetry) => { success: boolean; message: string }
+    onSelectProduct: (id: string) => void
 }) => {
 
     // Engine Wiring
@@ -28,6 +29,27 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
 
     const [activeMedia] = useState(0);
     const [addedFeedback, setAddedFeedback] = useState<string | null>(null);
+    const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+    const [quantity, setQuantity] = useState(1);
+    const [orderSuccess, setOrderSuccess] = useState<OrderSummary | null>(null);
+
+    // Molecule Discovery State
+    const [moleculeFilter, setMoleculeFilter] = useState<{ id: string; name: string } | null>(null);
+
+    // Handle molecule click
+    const handleMoleculeSelect = (ingredientId: string, ingredientName: string) => {
+        setMoleculeFilter({ id: ingredientId, name: ingredientName });
+    };
+
+    // Handle checkout confirmation
+    const handleConfirmOrder = (orderData: OrderSummary) => {
+        setOrderSuccess(orderData);
+        setAddedFeedback('Pesanan Berhasil! 🎉');
+        setTimeout(() => {
+            setAddedFeedback(null);
+            setOrderSuccess(null);
+        }, 3000);
+    };
 
     return (
         <div className="min-h-screen bg-white pb-20 animate-fade-in-up">
@@ -141,14 +163,35 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
                             </div>
                         )}
 
-                        {/* CTA */}
+                        {/* Quantity Selector */}
+                        <div className="flex items-center gap-4 bg-slate-50 rounded-xl p-4">
+                            <span className="text-sm font-bold text-slate-700">Jumlah:</span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                    className="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 transition-colors"
+                                >
+                                    −
+                                </button>
+                                <span className="w-12 text-center font-mono font-bold text-lg">{quantity}</span>
+                                <button
+                                    onClick={() => setQuantity(q => Math.min(product.stockQty, q + 1))}
+                                    className="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 transition-colors"
+                                >
+                                    +
+                                </button>
+                            </div>
+                            <span className="text-xs text-slate-400 ml-auto">
+                                Max: {product.stockQty}
+                            </span>
+                        </div>
+
+                        {/* CTA - Now opens Checkout Modal */}
                         <button
                             disabled={!stockEngine.stockStatus.actionable}
                             onClick={() => {
-                                if (onAddToCart && stockEngine.stockStatus.actionable) {
-                                    const result = onAddToCart(product);
-                                    setAddedFeedback(result.message);
-                                    setTimeout(() => setAddedFeedback(null), 2000);
+                                if (stockEngine.stockStatus.actionable) {
+                                    setShowCheckoutModal(true);
                                 }
                             }}
                             className={`w-full text-white py-4 rounded-xl font-bold text-lg shadow-lg transition-all disabled:opacity-50 flex justify-center items-center gap-3 ${addedFeedback
@@ -157,8 +200,24 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
                                 }`}
                         >
                             <ShoppingCart size={20} className={addedFeedback ? 'animate-bounce' : ''} />
-                            {addedFeedback || (stockEngine.stockStatus.actionable ? 'Tambah ke Keranjang' : 'Stok Habis')}
+                            {addedFeedback || (stockEngine.stockStatus.actionable ? 'Beli Sekarang' : 'Stok Habis')}
                         </button>
+
+                        {/* Order Success Banner */}
+                        {orderSuccess && (
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                                <div className="flex items-center gap-2 text-emerald-700 font-bold mb-2">
+                                    <CheckCircle2 size={18} />
+                                    Pesanan Terkonfirmasi!
+                                </div>
+                                <div className="text-xs text-emerald-600 space-y-1">
+                                    <div>Total: Rp {orderSuccess.netTotal.toLocaleString()}</div>
+                                    {orderSuccess.discountCode && (
+                                        <div>Kupon: {orderSuccess.discountCode} (-Rp {orderSuccess.discountAmount.toLocaleString()})</div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* USAGE GUIDE (New Feature) */}
                         <div className="bg-[#E0F2F1]/50 rounded-2xl p-6 border border-[#E0F2F1]">
@@ -183,17 +242,22 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
                             </div>
                         </div>
 
-                        {/* INGREDIENTS */}
+                        {/* INGREDIENTS - Now Clickable Molecule Nodes */}
                         <div>
                             <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                <Info size={18} className="text-[#FF6B9D]" /> Key Ingredients
+                                <FlaskConical size={18} className="text-[#FF6B9D]" /> Key Ingredients
+                                <span className="text-[10px] text-slate-400 font-normal ml-2">Klik untuk eksplorasi</span>
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {ingredients.map(ing => (
-                                    <div key={ing.id} className="p-3 rounded-xl border border-slate-100 bg-white hover:shadow-md transition-all">
-                                        <div className="font-bold text-xs text-slate-800 mb-1">{ing.name}</div>
-                                        <p className="text-[10px] text-slate-500 leading-relaxed">{ing.description}</p>
-                                    </div>
+                                    <ActiveMoleculeNode
+                                        key={ing.id}
+                                        ingredientId={ing.id}
+                                        ingredientName={ing.name}
+                                        description={ing.description}
+                                        currentProductId={product.id}
+                                        onClick={handleMoleculeSelect}
+                                    />
                                 ))}
                             </div>
                         </div>
@@ -228,6 +292,29 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
                     </div>
                 )}
             </div>
+
+            {/* Checkout Simulation Modal */}
+            <CheckoutSimulationModal
+                isOpen={showCheckoutModal}
+                onClose={() => setShowCheckoutModal(false)}
+                product={product}
+                quantity={quantity}
+                isDropshipper={isDropshipper}
+                onConfirmOrder={handleConfirmOrder}
+            />
+
+            {/* Molecule Discovery Overlay */}
+            <MoleculeDiscoveryOverlay
+                isOpen={moleculeFilter !== null}
+                onClose={() => setMoleculeFilter(null)}
+                ingredientId={moleculeFilter?.id || ''}
+                ingredientName={moleculeFilter?.name || ''}
+                currentProductId={product.id}
+                onProductSelect={(id) => {
+                    setMoleculeFilter(null);
+                    onSelectProduct(id);
+                }}
+            />
         </div>
     );
 };

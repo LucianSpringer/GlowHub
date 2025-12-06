@@ -10,6 +10,7 @@ import { SkinTwinEvidenceGallery } from './SkinTwinEvidenceGallery';
 interface StorefrontPageProps {
     onBack: () => void;
     onProductSelect?: (productId: string) => void;
+    userMode?: 'GUEST' | 'DROPSHIPPER';
 }
 
 type StorefrontTab = 'products' | 'bestseller' | 'bundles' | 'blog' | 'testimonials';
@@ -22,7 +23,7 @@ const TABS: { id: StorefrontTab; label: string; icon: typeof Store }[] = [
     { id: 'testimonials', label: 'Testimonials', icon: Users },
 ];
 
-export const StorefrontPage = ({ onBack, onProductSelect }: StorefrontPageProps) => {
+export const StorefrontPage = ({ onBack, onProductSelect, userMode = 'GUEST' }: StorefrontPageProps) => {
     const [activeTab, setActiveTab] = useState<StorefrontTab>('products');
 
     return (
@@ -72,9 +73,9 @@ export const StorefrontPage = ({ onBack, onProductSelect }: StorefrontPageProps)
                 {/* Tab Content */}
                 <div className="space-y-6">
                     {activeTab === 'products' && <VectorFilterInterface onProductSelect={onProductSelect} />}
-                    {activeTab === 'bestseller' && <VelocityTrendDashboard />}
-                    {activeTab === 'bundles' && <DynamicBundleBuilder />}
-                    {activeTab === 'blog' && <ContextualBlogReader onProductSelect={onProductSelect} />}
+                    {activeTab === 'bestseller' && <VelocityTrendDashboard userMode={userMode} />}
+                    {activeTab === 'bundles' && <DynamicBundleBuilder userMode={userMode} />}
+                    {activeTab === 'blog' && <ContextualBlogReader onProductSelect={onProductSelect} userMode={userMode} />}
                     {activeTab === 'testimonials' && <SkinTwinEvidenceGallery />}
                 </div>
 

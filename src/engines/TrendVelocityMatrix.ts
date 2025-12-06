@@ -155,3 +155,166 @@ export const generateMockTransactions = (productIds: string[], count: number = 5
         timestamp: now - Math.random() * weekMs
     }));
 };
+
+// ============================================================================
+// OOS PREDICTION ALGORITHM - Time-Series Stock Prediction
+// ============================================================================
+
+export type StockStatus = 'CRITICAL' | 'WARNING' | 'SAFE';
+
+export interface OOSPrediction {
+    timeToEmptyHours: number;
+    status: StockStatus;
+    velocityPerHour: number;
+    formattedTime: string;
+}
+
+/**
+ * Estimate time until product runs out of stock
+ * Uses velocity from last 6 hours for accurate prediction
+ */
+export const estimateTimeToEmpty = (
+    stock: number,
+    velocityPerHour: number
+): OOSPrediction => {
+    if (velocityPerHour <= 0 || stock <= 0) {
+        return {
+            timeToEmptyHours: stock <= 0 ? 0 : Infinity,
+            status: stock <= 0 ? 'CRITICAL' : 'SAFE',
+            velocityPerHour: 0,
+            formattedTime: stock <= 0 ? 'HABIS' : '∞'
+        };
+    }
+
+    const timeToZero = stock / velocityPerHour;
+
+    // Status thresholds
+    let status: StockStatus;
+    if (timeToZero < 12) status = 'CRITICAL';
+    else if (timeToZero < 48) status = 'WARNING';
+    else status = 'SAFE';
+
+    // Format time string
+    let formattedTime: string;
+    if (timeToZero < 1) {
+        formattedTime = `${Math.round(timeToZero * 60)} menit`;
+    } else if (timeToZero < 24) {
+        formattedTime = `${Math.round(timeToZero)} jam`;
+    } else if (timeToZero < 168) { // < 1 week
+        formattedTime = `${Math.round(timeToZero / 24)} hari`;
+    } else {
+        formattedTime = `${Math.round(timeToZero / 168)} minggu`;
+    }
+
+    return {
+        timeToEmptyHours: timeToZero,
+        status,
+        velocityPerHour,
+        formattedTime
+    };
+};
+
+// ============================================================================
+// TREND MOMENTUM DERIVATIVE - Rate of Change Detection
+// ============================================================================
+
+export type TrendDirection = 'ACCELERATING' | 'STABLE' | 'DECELERATING';
+
+export interface MomentumDerivative {
+    direction: TrendDirection;
+    deltaPercent: number;
+    emoji: string;
+}
+
+/**
+ * Calculate rate of change between current and previous velocity
+ * +20% = ACCELERATING, -20% = DECELERATING
+ */
+export const calculateMomentumDerivative = (
+    currentVelocity: number,
+    previousVelocity: number
+): MomentumDerivative => {
+    if (previousVelocity === 0) {
+        return {
+            direction: currentVelocity > 0 ? 'ACCELERATING' : 'STABLE',
+            deltaPercent: currentVelocity > 0 ? 100 : 0,
+            emoji: currentVelocity > 0 ? '🚀' : '➡️'
+        };
+    }
+
+    const deltaPercent = ((currentVelocity - previousVelocity) / previousVelocity) * 100;
+
+    if (deltaPercent > 20) {
+        return { direction: 'ACCELERATING', deltaPercent, emoji: '🚀' };
+    } else if (deltaPercent < -20) {
+        return { direction: 'DECELERATING', deltaPercent, emoji: '📉' };
+    } else {
+        return { direction: 'STABLE', deltaPercent, emoji: '➡️' };
+    }
+};
+
+// ============================================================================
+// LIVE TRANSACTION STREAM - Stochastic Injection
+// ============================================================================
+
+/**
+ * Inject random transactions to simulate real-time activity
+ */
+export const injectRandomTransactions = (
+    transactions: SaleTransaction[],
+    productIds: string[],
+    count: number = 3
+): SaleTransaction[] => {
+    const now = Date.now();
+    const newTransactions: SaleTransaction[] = Array.from({ length: count }, () => ({
+        productId: productIds[Math.floor(Math.random() * productIds.length)],
+        quantity: Math.floor(Math.random() * 3) + 1,
+        timestamp: now - Math.random() * 60000 // Last minute
+    }));
+
+    return [...transactions, ...newTransactions];
+};
+
+// ============================================================================
+// BRAND DISTRIBUTION ANALYSIS
+// ============================================================================
+
+export interface BrandDistribution {
+    brand: string;
+    count: number;
+    percentage: number;
+    color: string;
+}
+
+const BRAND_COLORS: Record<string, string> = {
+    'SCARLETT': '#FF6B9D',
+    'SOMETHINC': '#8B5CF6',
+    'AVOSKIN': '#10B981',
+    'WARDAH': '#06B6D4',
+    'EMINA': '#F59E0B',
+};
+
+/**
+ * Calculate brand distribution in top products
+ */
+export const calculateBrandDistribution = (
+    products: VelocityProduct[]
+): BrandDistribution[] => {
+    const brandCounts = new Map<string, number>();
+
+    products.forEach(p => {
+        brandCounts.set(p.brand, (brandCounts.get(p.brand) || 0) + 1);
+    });
+
+    const total = products.length || 1;
+
+    return Array.from(brandCounts.entries())
+        .map(([brand, count]) => ({
+            brand,
+            count,
+            percentage: (count / total) * 100,
+            color: BRAND_COLORS[brand] || '#64748B'
+        }))
+        .sort((a, b) => b.count - a.count);
+};
+
