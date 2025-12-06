@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
-
 import {
   Sparkles, ShoppingBag, Star, Heart,
-  ShieldCheck, Truck, Percent, Zap, CheckCircle2, Instagram
+  ShieldCheck, Truck, Percent, Zap, CheckCircle2, Instagram, LogIn
 } from 'lucide-react';
 import { useBioMatrix, SkinVector } from './useBioMatrix';
+import { BioRadar } from './BioRadar';
+import { ProductDetail } from './ProductDetail';
+import { getProductById } from './ProductTelemetry';
+
+
 
 // --- 1. CONFIGURATION VECTORS ---
 
@@ -78,11 +82,11 @@ const TESTIMONIAL_DATA = [
 
 // --- 2. HIGH-YIELD COMPONENTS ---
 
-const Navbar = ({ scrolled }: { scrolled: boolean }) => (
-  <nav className={`fixed w - full z - 50 transition - all duration - 300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'
+const Navbar = ({ scrolled, onLogin, userMode }: any) => (
+  <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'
     } `}>
     <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
         <div className="bg-[#FF6B9D] p-1.5 rounded-lg text-white">
           <Sparkles size={20} fill="currentColor" />
         </div>
@@ -99,9 +103,17 @@ const Navbar = ({ scrolled }: { scrolled: boolean }) => (
         <a href="#dropship" className="hover:text-[#FF6B9D] transition-colors">Daftar Dropship</a>
       </div>
 
-      <button className="bg-[#FF6B9D] text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-pink-200 hover:bg-pink-600 transition-all hover:scale-105">
-        Belanja Sekarang
-      </button>
+      <div className="flex gap-4">
+        <button
+          onClick={onLogin}
+          className={`px-4 py-2 rounded-full text-xs font-bold border transition-all flex items-center gap-2 ${userMode === 'DROPSHIPPER' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:border-[#FF6B9D]'}`}
+        >
+          <LogIn size={14} /> {userMode === 'DROPSHIPPER' ? 'Reseller Mode' : 'Login'}
+        </button>
+        <button className="bg-[#FF6B9D] text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-pink-200 hover:bg-pink-600 transition-all hover:scale-105">
+          Belanja Sekarang
+        </button>
+      </div>
     </div>
   </nav>
 );
@@ -200,50 +212,59 @@ const BioScanner = ({ engine }: { engine: any }) => {
 
   return (
     <section id="quiz" className="py-20 px-6 scroll-mt-20">
-      <div className="max-w-5xl mx-auto bg-[#E0F2F1] rounded-[3rem] p-8 md:p-12 relative overflow-hidden border border-[#FF6B9D]/10">
+      <div className="max-w-6xl mx-auto bg-[#E0F2F1] rounded-[3rem] p-8 md:p-12 relative overflow-hidden border border-[#FF6B9D]/10">
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/30 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3" />
 
-        <div className="relative z-10 text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-            Bingung Pilih Skincare?
-          </h2>
-          <p className="text-slate-600 text-lg">
-            Input kondisi kulitmu di bawah ini. Algoritma GlowHub akan mencarikan
-            <span className="text-[#FF6B9D] font-bold"> Molecular Match</span> terbaik.
-          </p>
-        </div>
+        <div className="grid md:grid-cols-2 gap-12 items-center relative z-10">
 
-        <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
-          {vectors.map((v) => {
-            const isActive = (engine.activeMask & v.flag) === v.flag;
-            return (
-              <button
-                key={v.flag}
-                onClick={() => engine.toggleBioMarker(v.flag)}
-                className={`
-                                    relative px - 6 py - 4 rounded - xl text - left transition - all duration - 200 border - 2 flex justify - between items - center group
-                                    ${isActive
-                    ? 'border-[#FF6B9D] bg-white text-[#FF6B9D] shadow-lg scale-[1.02]'
-                    : 'border-white bg-white/60 text-slate-600 hover:border-pink-200 hover:bg-white'
-                  }
-`}
-              >
-                <div className="font-bold text-sm">{v.label}</div>
-                {isActive ? (
-                  <CheckCircle2 className="text-[#FF6B9D]" size={20} />
-                ) : (
-                  <div className="w-5 h-5 rounded-full border-2 border-slate-200 group-hover:border-pink-300" />
-                )}
-              </button>
-            )
-          })}
+          {/* LEFT COLUMN: VISUALIZER (High Complexity) */}
+          <div className="text-center md:text-left">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+              Bio-Metric Scan
+            </h2>
+            <p className="text-slate-600 text-lg mb-8">
+              Real-time dermal topography analysis.
+            </p>
+            <div className="bg-white/50 rounded-3xl p-4 shadow-inner">
+              {/* THE CANVAS INJECTION */}
+              <BioRadar mask={engine.activeMask} />
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: CONTROLS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {vectors.map((v) => {
+              const isActive = (engine.activeMask & v.flag) === v.flag;
+              return (
+                <button
+                  key={v.flag}
+                  onClick={() => engine.toggleBioMarker(v.flag)}
+                  className={`
+                                        relative px-6 py-4 rounded-xl text-left transition-all duration-200 border-2 flex justify-between items-center group
+                                        ${isActive
+                      ? 'border-[#FF6B9D] bg-white text-[#FF6B9D] shadow-lg scale-[1.02]'
+                      : 'border-white bg-white/60 text-slate-600 hover:border-pink-200 hover:bg-white'
+                    }
+                                    `}
+                >
+                  <div className="font-bold text-sm">{v.label}</div>
+                  {isActive ? (
+                    <CheckCircle2 className="text-[#FF6B9D]" size={20} />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border-2 border-slate-200 group-hover:border-pink-300" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
     </section>
   );
 };
 
-const ProductGrid = ({ products, activeMask }: { products: any[], activeMask: number }) => (
+
+const ProductGrid = ({ products, activeMask, onSelectProduct }: { products: any[], activeMask: number, onSelectProduct: (id: string) => void }) => (
   <section className="max-w-7xl mx-auto px-6 pb-24">
     {activeMask === 0 ? (
       <div className="text-center p-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
@@ -266,7 +287,7 @@ const ProductGrid = ({ products, activeMask }: { products: any[], activeMask: nu
           {products.map((p: any) => {
             const matchScore = ((p.vectorMask & activeMask) !== 0);
             return (
-              <div key={p.id} className="group bg-white rounded-3xl border border-slate-100 overflow-hidden hover:shadow-2xl hover:shadow-pink-100/50 transition-all duration-300 transform hover:-translate-y-1">
+              <div key={p.id} onClick={() => onSelectProduct(p.id)} className="group bg-white rounded-3xl border border-slate-100 overflow-hidden hover:shadow-2xl hover:shadow-pink-100/50 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer">
                 <div className="relative h-64 overflow-hidden bg-slate-100">
                   <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   {matchScore && (
@@ -402,6 +423,9 @@ const Footer = () => (
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
+  const [view, setView] = useState<'LANDING' | 'PRODUCT'>('LANDING');
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [userMode, setUserMode] = useState<'GUEST' | 'DROPSHIPPER'>('GUEST'); // Simulates Login
 
   // Wire up the engine (The Logic Layer)
   const engine = useBioMatrix();
@@ -412,22 +436,48 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleProductSelect = (id: string) => {
+    // Map the old ID format (L-01) to new Telemetry ID if needed, 
+    // for this demo we assume ID consistency or mock fetch
+    setSelectedProductId(id);
+    setView('PRODUCT');
+    window.scrollTo(0, 0);
+  };
+
+  const toggleUserMode = () => {
+    setUserMode(prev => prev === 'GUEST' ? 'DROPSHIPPER' : 'GUEST');
+  };
+
   return (
-    <div className={`min - h - screen bg - white text - [#1F2937] ${THEME.fonts} `}>
-      <Navbar scrolled={scrolled} />
-      <main>
-        <HeroSection />
-        <BrandTicker />
-        <AdvantagesGrid />
+    <div className={`min-h-screen bg-white text-[#1F2937] ${THEME.fonts} `}>
+      {view === 'LANDING' ? (
+        <>
+          <Navbar scrolled={scrolled} onLogin={toggleUserMode} userMode={userMode} />
+          <main>
+            <HeroSection />
+            <BrandTicker />
+            <AdvantagesGrid />
 
-        {/* The Integrated Engine Sections */}
-        <BioScanner engine={engine} />
-        <ProductGrid products={engine.recommendations} activeMask={engine.activeMask} />
+            {/* The Integrated Engine Sections */}
+            <BioScanner engine={engine} />
+            <ProductGrid
+              products={engine.recommendations}
+              activeMask={engine.activeMask}
+              onSelectProduct={handleProductSelect}
+            />
 
-        <TestimonialStream />
-        <DropshipGateway />
-      </main>
-      <Footer />
+            <TestimonialStream />
+            <DropshipGateway />
+          </main>
+          <Footer />
+        </>
+      ) : (
+        <ProductDetail
+          product={getProductById(selectedProductId!)}
+          isDropshipper={userMode === 'DROPSHIPPER'}
+          onBack={() => setView('LANDING')}
+        />
+      )}
     </div>
   );
 }
