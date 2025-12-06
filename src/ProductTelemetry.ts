@@ -107,6 +107,9 @@ const _PRODUCT_DB: ProductTelemetry[] = [
     }
 ];
 
+// Export Master Catalog for other components
+export const PRODUCT_CATALOG = _PRODUCT_DB;
+
 // --- 3. LOGIC ENGINES ---
 
 export function useSupplyChainResonance(initialStock: number) {

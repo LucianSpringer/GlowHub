@@ -8,16 +8,10 @@ import {
     type GeneratedLink,
     type ClickTelemetry
 } from '../engines/AffiliateHashEncoder';
-
-const SAMPLE_PRODUCTS = [
-    { id: 'P1', name: 'Scarlett Brightening Serum' },
-    { id: 'P2', name: 'Somethinc Niacinamide 10%' },
-    { id: 'P3', name: 'Avoskin Miraculous Retinol' },
-    { id: 'P4', name: 'Azarine Hydrasoothe SPF50' },
-];
+import { PRODUCT_CATALOG } from '../ProductTelemetry';
 
 export const ViralVectorLinker = () => {
-    const [selectedProductId, setSelectedProductId] = useState('P1');
+    const [selectedProductId, setSelectedProductId] = useState(PRODUCT_CATALOG[0].id);
     const [campaignId, setCampaignId] = useState('');
     const [generatedLink, setGeneratedLink] = useState<GeneratedLink | null>(null);
     const [telemetry, setTelemetry] = useState<ClickTelemetry[]>([]);
@@ -30,12 +24,7 @@ export const ViralVectorLinker = () => {
 
     const handleGenerate = () => {
         const userId = 'DS-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-        const link = generateAffiliateLink(
-            'https://glowhub.id',
-            userId,
-            selectedProductId,
-            campaignId || undefined
-        );
+        const link = generateAffiliateLink('https://glowhub.id', userId, selectedProductId, campaignId || undefined);
         setGeneratedLink(link);
         setCopied(false);
     };
@@ -51,7 +40,6 @@ export const ViralVectorLinker = () => {
 
     return (
         <div className="bg-gradient-to-br from-cyan-950 to-slate-900 rounded-2xl p-6 text-white">
-            {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
                     <div className="bg-cyan-500 p-2 rounded-xl">
@@ -63,7 +51,6 @@ export const ViralVectorLinker = () => {
                     </div>
                 </div>
 
-                {/* Click Telemetry */}
                 <div className="flex items-center gap-2 bg-cyan-500/20 px-3 py-1.5 rounded-full">
                     <MousePointer2 size={14} className="text-cyan-400" />
                     <span className="text-sm font-mono font-bold text-cyan-400">{totalClicks}</span>
@@ -71,7 +58,6 @@ export const ViralVectorLinker = () => {
                 </div>
             </div>
 
-            {/* Deep Link Builder */}
             <div className="space-y-3 mb-4">
                 <div>
                     <label className="text-xs text-slate-400 uppercase mb-1 block">Product</label>
@@ -80,8 +66,8 @@ export const ViralVectorLinker = () => {
                         onChange={(e) => setSelectedProductId(e.target.value)}
                         className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500"
                     >
-                        {SAMPLE_PRODUCTS.map(p => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
+                        {PRODUCT_CATALOG.map(p => (
+                            <option key={p.id} value={p.id}>{p.brand} - {p.name}</option>
                         ))}
                     </select>
                 </div>
@@ -98,7 +84,6 @@ export const ViralVectorLinker = () => {
                 </div>
             </div>
 
-            {/* Generate Button */}
             <button
                 onClick={handleGenerate}
                 className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all mb-4"
@@ -106,10 +91,8 @@ export const ViralVectorLinker = () => {
                 <Link2 size={16} /> Generate Link
             </button>
 
-            {/* Generated Output */}
             {generatedLink && (
                 <div className="space-y-4">
-                    {/* Link Display */}
                     <div className="bg-slate-800 rounded-xl p-3">
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-xs text-slate-400">Your Affiliate Link</span>
@@ -131,24 +114,18 @@ export const ViralVectorLinker = () => {
                         </div>
                     </div>
 
-                    {/* QR Code */}
                     <div className="bg-slate-800 rounded-xl p-4 flex flex-col items-center">
                         <div className="flex items-center gap-2 text-xs text-slate-400 mb-3">
                             <QrCode size={14} /> QR Code
                         </div>
                         <div className="bg-white p-2 rounded-lg">
-                            <img
-                                src={generatedLink.qrDataUrl}
-                                alt="QR Code"
-                                className="w-32 h-32"
-                            />
+                            <img src={generatedLink.qrDataUrl} alt="QR Code" className="w-32 h-32" />
                         </div>
                         <p className="text-[10px] text-slate-500 mt-2">Scan to preview link</p>
                     </div>
                 </div>
             )}
 
-            {/* Active Links Stats */}
             <div className="mt-4 pt-4 border-t border-slate-700">
                 <div className="text-xs text-slate-400 mb-2">Active Links</div>
                 <div className="grid grid-cols-3 gap-2">

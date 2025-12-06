@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogIn, Sparkles, LayoutDashboard } from 'lucide-react';
+import { LogIn, Sparkles, LayoutDashboard, LogOut, ShieldCheck, Shield, Store } from 'lucide-react';
 
 // Components
 import { HeroSection } from './components/HeroSection';
@@ -9,36 +9,78 @@ import { DropshipCTA } from './components/DropshipCTA';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProductDetail } from './ProductDetail';
 import { DropshipperDashboard } from './dropship/DropshipperDashboard';
+import { AdminDashboard } from './admin/AdminDashboard';
+import { AccessGate } from './components/AccessGate';
+import { StorefrontPage } from './commerce/StorefrontPage';
 
 // Engines & Logic
 import { useBioMatrix, SkinVector } from './useBioMatrix';
 import { BioRadar } from './BioRadar';
 import { getProductById } from './ProductTelemetry';
+import { PermissionMask, type SecureSession } from './engines/AccessControlSystem';
 
-const Navbar = ({ scrolled, onLogin, userMode, setView }: any) => (
-  <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'}`}>
-    <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-      <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('LANDING')}>
-        <div className="bg-[#FF6B9D] p-1.5 rounded-lg text-white"><Sparkles size={20} fill="currentColor" /></div>
-        <span className="font-bold text-xl text-slate-800">GlowHub<span className="text-[#FF6B9D]">.id</span></span>
-      </div>
-      <div className="hidden md:flex gap-8 text-sm font-medium text-slate-600">
-        <a href="#home" className="hover:text-[#FF6B9D]">Home</a>
-        <a href="#brands" className="hover:text-[#FF6B9D]">Brands</a>
-        <a href="#quiz" className="hover:text-[#FF6B9D]">Quiz</a>
-        <a href="#dropship" className="hover:text-[#FF6B9D]">Dropship</a>
-        {userMode === 'DROPSHIPPER' && (
-          <button onClick={() => setView('DASHBOARD')} className="flex items-center gap-1 text-pink-500 font-bold">
-            <LayoutDashboard size={14} /> Dashboard
+// --- NAVBAR ---
+const Navbar = ({ scrolled, session, onAuthAction, setView, currentView }: any) => {
+  const hasViewDashboard = session && (session.roleMask & PermissionMask.VIEW_DASHBOARD);
+  const hasAdminOverride = session && (session.roleMask & PermissionMask.ADMIN_OVERRIDE);
+
+  const navigateTo = (sectionId: string) => {
+    if (currentView !== 'LANDING') {
+      setView('LANDING');
+      setTimeout(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'}`}>
+      <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('LANDING')}>
+          <div className="bg-[#FF6B9D] p-1.5 rounded-lg text-white"><Sparkles size={20} fill="currentColor" /></div>
+          <span className="font-bold text-xl text-slate-800">GlowHub<span className="text-[#FF6B9D]">.id</span></span>
+        </div>
+        <div className="hidden md:flex gap-8 text-sm font-medium text-slate-600">
+          <button onClick={() => navigateTo('home')} className="hover:text-[#FF6B9D]">Home</button>
+          <button onClick={() => navigateTo('brands')} className="hover:text-[#FF6B9D]">Brands</button>
+          <button onClick={() => navigateTo('quiz')} className="hover:text-[#FF6B9D]">Quiz</button>
+          <button onClick={() => navigateTo('dropship')} className="hover:text-[#FF6B9D]">Dropship</button>
+          <button onClick={() => setView('SHOP')} className="flex items-center gap-1 text-purple-500 font-bold">
+            <Store size={14} /> Shop
+          </button>
+          {hasViewDashboard && (
+            <button onClick={() => setView('DASHBOARD')} className="flex items-center gap-1 text-pink-500 font-bold">
+              <LayoutDashboard size={14} /> Dashboard
+            </button>
+          )}
+          {hasAdminOverride && (
+            <button onClick={() => setView('ADMIN')} className="flex items-center gap-1 text-red-500 font-bold">
+              <Shield size={14} /> Admin
+            </button>
+          )}
+        </div>
+
+        {session ? (
+          <button
+            onClick={onAuthAction}
+            className="px-4 py-2 rounded-full text-xs font-bold border border-slate-200 text-slate-600 hover:border-red-500 hover:text-red-500 flex items-center gap-2 transition-all"
+          >
+            <ShieldCheck size={14} className="text-emerald-500" /> {session.userAlias} <LogOut size={14} />
+          </button>
+        ) : (
+          <button
+            onClick={onAuthAction}
+            className="px-4 py-2 rounded-full text-xs font-bold border border-slate-200 text-slate-600 hover:border-[#FF6B9D] flex items-center gap-2 transition-all"
+          >
+            <LogIn size={14} /> Login / Register
           </button>
         )}
       </div>
-      <button onClick={onLogin} className={`px-4 py-2 rounded-full text-xs font-bold border flex items-center gap-2 ${userMode === 'DROPSHIPPER' ? 'bg-slate-900 text-white' : 'bg-white border-slate-200 text-slate-600'}`}>
-        <LogIn size={14} /> {userMode === 'DROPSHIPPER' ? 'Dropshipper Mode' : 'Login'}
-      </button>
-    </div>
-  </nav>
-);
+    </nav>
+  );
+};
 
 const Footer = () => (
   <footer className="bg-slate-900 text-white py-12 text-center text-sm text-slate-500">
@@ -50,9 +92,13 @@ const Footer = () => (
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
-  const [view, setView] = useState<'LANDING' | 'PRODUCT' | 'DASHBOARD'>('LANDING');
+  const [view, setView] = useState<'LANDING' | 'PRODUCT' | 'DASHBOARD' | 'ADMIN' | 'SHOP'>('LANDING');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [userMode, setUserMode] = useState<'GUEST' | 'DROPSHIPPER'>('GUEST');
+
+  // New Access Control State
+  const [session, setSession] = useState<SecureSession | null>(null);
+  const [isGateOpen, setIsGateOpen] = useState(false);
+  const [gateMode, setGateMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
 
   const engine = useBioMatrix();
 
@@ -68,25 +114,57 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
+  const handleAuthAction = () => {
+    if (session) {
+      // Logout Logic
+      setSession(null);
+      setView('LANDING');
+    } else {
+      // Open Gate
+      setGateMode('LOGIN');
+      setIsGateOpen(true);
+    }
+  };
+
+  const handleSessionEstablished = (newSession: SecureSession) => {
+    setSession(newSession);
+    // Auto-redirect if has Dashboard permission
+    if (newSession.roleMask & PermissionMask.VIEW_DASHBOARD) {
+      setView('DASHBOARD');
+    }
+  };
+
+  const isDropshipper = session ? (session.roleMask & PermissionMask.VIEW_DASHBOARD) !== 0 : false;
+
   return (
     <div className="min-h-screen bg-white text-[#1F2937] font-sans">
+
+      {/* High-Yield Access Gate */}
+      <AccessGate
+        isOpen={isGateOpen}
+        onClose={() => setIsGateOpen(false)}
+        onAuthenticated={handleSessionEstablished}
+        initialMode={gateMode}
+      />
+
       <Navbar
         scrolled={scrolled}
-        onLogin={() => setUserMode(prev => prev === 'GUEST' ? 'DROPSHIPPER' : 'GUEST')}
-        userMode={userMode}
+        session={session}
+        onAuthAction={handleAuthAction}
         setView={setView}
+        currentView={view}
       />
 
       {view === 'LANDING' ? (
         <main>
           <HeroSection
-            userMode={userMode}
-            onCtaClick={() => document.getElementById('quiz')?.scrollIntoView({ behavior: 'smooth' })}
+            userMode={isDropshipper ? 'DROPSHIPPER' : 'GUEST'}
+            onCtaClick={() => setView('SHOP')}
           />
 
           <BrandShowcase />
 
-          {/* ENHANCED BIO-SCANNER (QUIZ LAYER) */}
+          {/* ENHANCED BIO-SCANNER */}
           <section id="quiz" className="py-24 px-6">
             <div className="max-w-6xl mx-auto bg-[#E0F2F1] rounded-[3rem] p-8 md:p-16 relative overflow-hidden">
               <div className="grid md:grid-cols-2 gap-12 items-center relative z-10">
@@ -126,7 +204,7 @@ export default function App() {
                     {engine.recommendations.map((p: any) => (
                       <div key={p.id} onClick={() => handleProductSelect(p.id)} className="bg-white p-4 rounded-2xl cursor-pointer hover:shadow-xl transition-all group">
                         <div className="aspect-square bg-slate-100 rounded-xl mb-4 overflow-hidden">
-                          <img src={p.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                         </div>
                         <div className="text-xs font-bold text-slate-400 mb-1">{p.brand}</div>
                         <div className="font-bold text-slate-900">{p.name}</div>
@@ -141,17 +219,24 @@ export default function App() {
 
           <Testimonials />
 
-          <DropshipCTA onRegister={() => alert("Redirect to Registration Logic")} />
+          <DropshipCTA onRegister={() => {
+            setGateMode('REGISTER');
+            setIsGateOpen(true);
+          }} />
         </main>
       ) : view === 'PRODUCT' ? (
         <ProductDetail
           product={getProductById(selectedProductId!)}
-          isDropshipper={userMode === 'DROPSHIPPER'}
+          isDropshipper={isDropshipper}
           onBack={() => setView('LANDING')}
           onSelectProduct={handleProductSelect}
         />
-      ) : (
+      ) : view === 'DASHBOARD' ? (
         <DropshipperDashboard onBack={() => setView('LANDING')} />
+      ) : view === 'ADMIN' ? (
+        <AdminDashboard onBack={() => setView('LANDING')} />
+      ) : (
+        <StorefrontPage onBack={() => setView('LANDING')} onProductSelect={handleProductSelect} />
       )}
       <Footer />
     </div>

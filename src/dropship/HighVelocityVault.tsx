@@ -27,7 +27,6 @@ export const HighVelocityVault = () => {
 
     return (
         <div className="bg-gradient-to-br from-orange-950 to-slate-900 rounded-2xl p-6 text-white">
-            {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
                     <div className="bg-orange-500 p-2 rounded-xl">
@@ -40,7 +39,6 @@ export const HighVelocityVault = () => {
                 </div>
             </div>
 
-            {/* Product Grid */}
             <div className="grid grid-cols-2 gap-3">
                 {products.slice(0, 4).map(product => {
                     const isHovered = hoveredProduct === product.id;
@@ -53,30 +51,22 @@ export const HighVelocityVault = () => {
                             onMouseEnter={() => setHoveredProduct(product.id)}
                             onMouseLeave={() => setHoveredProduct(null)}
                         >
-                            {/* Urgency Badge */}
                             {product.urgencyFlag === 'HIGH' && (
                                 <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded font-bold animate-pulse flex items-center gap-1">
                                     <AlertTriangle size={10} /> LOW STOCK
                                 </div>
                             )}
 
-                            {/* Product Image */}
                             <div className="aspect-square bg-slate-700 rounded-lg mb-2 overflow-hidden">
-                                <img
-                                    src={product.imageUrl}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                />
+                                <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                             </div>
 
-                            {/* Product Info */}
                             <div className="flex items-center justify-between mb-1">
                                 <span className="text-[10px] text-slate-400 font-bold">{product.brand}</span>
                                 {getTrendIcon(product.trendDirection)}
                             </div>
                             <div className="text-xs font-bold truncate mb-2">{product.name}</div>
 
-                            {/* Stock Depletion Bar */}
                             <div className="mb-2">
                                 <div className="flex justify-between text-[9px] text-slate-500 mb-0.5">
                                     <span>Stock: {product.stockRemaining}</span>
@@ -93,7 +83,6 @@ export const HighVelocityVault = () => {
                                 </div>
                             </div>
 
-                            {/* Virality Score */}
                             <div className="flex justify-between items-center">
                                 <span className="text-orange-400 font-bold text-sm">
                                     Rp {product.price.toLocaleString()}
@@ -103,7 +92,6 @@ export const HighVelocityVault = () => {
                                 </span>
                             </div>
 
-                            {/* Margin Calculator Overlay */}
                             {isHovered && (
                                 <div className="absolute inset-0 bg-slate-900/95 rounded-xl p-3 flex flex-col justify-center items-center backdrop-blur-sm">
                                     <Calculator size={20} className="text-emerald-400 mb-2" />
@@ -124,7 +112,6 @@ export const HighVelocityVault = () => {
                 })}
             </div>
 
-            {/* Legend */}
             <div className="flex justify-center gap-4 mt-4 pt-4 border-t border-slate-700/50 text-[10px] text-slate-500">
                 <span className="flex items-center gap-1"><TrendingUp size={12} className="text-emerald-400" /> Rising</span>
                 <span className="flex items-center gap-1"><TrendingDown size={12} className="text-red-400" /> Falling</span>

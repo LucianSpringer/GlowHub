@@ -16,7 +16,6 @@ export const LogisticsCommandCenter = () => {
 
     useEffect(() => {
         setOrders(generateMockOrders(8));
-        // Simulate supplier status changes
         const interval = setInterval(() => {
             const roll = Math.random();
             setSupplierStatus(roll > 0.9 ? 'OFFLINE' : roll > 0.7 ? 'SYNCING' : 'ONLINE');
@@ -68,7 +67,6 @@ export const LogisticsCommandCenter = () => {
 
     return (
         <div className="bg-slate-900 rounded-2xl p-6 text-white">
-            {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
                     <div className="bg-blue-500 p-2 rounded-xl">
@@ -80,20 +78,18 @@ export const LogisticsCommandCenter = () => {
                     </div>
                 </div>
 
-                {/* Supplier Bridge Status */}
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${supplierStatus === 'ONLINE' ? 'bg-emerald-500/20 text-emerald-400' :
-                    supplierStatus === 'SYNCING' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-red-500/20 text-red-400'
+                        supplierStatus === 'SYNCING' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-red-500/20 text-red-400'
                     }`}>
                     <div className={`w-2 h-2 rounded-full ${supplierStatus === 'ONLINE' ? 'bg-emerald-400' :
-                        supplierStatus === 'SYNCING' ? 'bg-yellow-400 animate-pulse' :
-                            'bg-red-400'
+                            supplierStatus === 'SYNCING' ? 'bg-yellow-400 animate-pulse' :
+                                'bg-red-400'
                         }`} />
                     Supplier: {supplierStatus}
                 </div>
             </div>
 
-            {/* Order Queue */}
             <div className="space-y-2 max-h-64 overflow-y-auto pr-2 mb-4">
                 {orders.slice(0, 6).map(order => (
                     <div key={order.id} className="bg-slate-800 rounded-xl p-3 flex items-center justify-between">
@@ -116,31 +112,27 @@ export const LogisticsCommandCenter = () => {
                 ))}
             </div>
 
-            {/* Action Matrix */}
-            <div className="flex gap-3">
-                <button
-                    onClick={handleBatchProcess}
-                    disabled={processing || supplierStatus === 'OFFLINE' || pendingOrders.length === 0}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${processing || supplierStatus === 'OFFLINE'
+            <button
+                onClick={handleBatchProcess}
+                disabled={processing || supplierStatus === 'OFFLINE' || pendingOrders.length === 0}
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${processing || supplierStatus === 'OFFLINE'
                         ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
                         : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90'
-                        }`}
-                >
-                    {processing ? (
-                        <>
-                            <RefreshCw size={16} className="animate-spin" />
-                            Processing {progress.current}/{progress.total}
-                        </>
-                    ) : (
-                        <>
-                            <Zap size={16} />
-                            Batch Process ({pendingOrders.length})
-                        </>
-                    )}
-                </button>
-            </div>
+                    }`}
+            >
+                {processing ? (
+                    <>
+                        <RefreshCw size={16} className="animate-spin" />
+                        Processing {progress.current}/{progress.total}
+                    </>
+                ) : (
+                    <>
+                        <Zap size={16} />
+                        Batch Process ({pendingOrders.length})
+                    </>
+                )}
+            </button>
 
-            {/* Stats Footer */}
             <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-700">
                 <div className="text-center">
                     <div className="text-xl font-mono font-bold text-emerald-400">
@@ -149,9 +141,7 @@ export const LogisticsCommandCenter = () => {
                     <div className="text-[10px] text-slate-500 uppercase">Processed</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-xl font-mono font-bold text-yellow-400">
-                        {pendingOrders.length}
-                    </div>
+                    <div className="text-xl font-mono font-bold text-yellow-400">{pendingOrders.length}</div>
                     <div className="text-[10px] text-slate-500 uppercase">Pending</div>
                 </div>
                 <div className="text-center">
