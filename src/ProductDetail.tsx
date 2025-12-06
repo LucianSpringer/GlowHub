@@ -12,11 +12,12 @@ import {
 } from './ProductTelemetry';
 import type { ProductTelemetry } from './ProductTelemetry';
 
-export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelectProduct }: {
+export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelectProduct, onAddToCart }: {
     product: ProductTelemetry,
     isDropshipper?: boolean,
     onBack: () => void,
-    onSelectProduct: (id: string) => void
+    onSelectProduct: (id: string) => void,
+    onAddToCart?: (product: ProductTelemetry) => { success: boolean; message: string }
 }) => {
 
     // Engine Wiring
@@ -26,6 +27,7 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
     const relatedProducts = getRelatedProducts(product.id);
 
     const [activeMedia] = useState(0);
+    const [addedFeedback, setAddedFeedback] = useState<string | null>(null);
 
     return (
         <div className="min-h-screen bg-white pb-20 animate-fade-in-up">
@@ -142,10 +144,20 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
                         {/* CTA */}
                         <button
                             disabled={!stockEngine.stockStatus.actionable}
-                            className="w-full bg-[#FF6B9D] hover:bg-pink-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-pink-200/50 transition-all disabled:opacity-50 flex justify-center items-center gap-3"
+                            onClick={() => {
+                                if (onAddToCart && stockEngine.stockStatus.actionable) {
+                                    const result = onAddToCart(product);
+                                    setAddedFeedback(result.message);
+                                    setTimeout(() => setAddedFeedback(null), 2000);
+                                }
+                            }}
+                            className={`w-full text-white py-4 rounded-xl font-bold text-lg shadow-lg transition-all disabled:opacity-50 flex justify-center items-center gap-3 ${addedFeedback
+                                ? 'bg-emerald-500 shadow-emerald-200/50'
+                                : 'bg-[#FF6B9D] hover:bg-pink-600 shadow-pink-200/50'
+                                }`}
                         >
-                            <ShoppingCart size={20} />
-                            {stockEngine.stockStatus.actionable ? 'Tambah ke Keranjang' : 'Stok Habis'}
+                            <ShoppingCart size={20} className={addedFeedback ? 'animate-bounce' : ''} />
+                            {addedFeedback || (stockEngine.stockStatus.actionable ? 'Tambah ke Keranjang' : 'Stok Habis')}
                         </button>
 
                         {/* USAGE GUIDE (New Feature) */}

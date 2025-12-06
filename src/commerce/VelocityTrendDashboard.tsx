@@ -1,10 +1,9 @@
 // VelocityTrendDashboard.tsx - Best Seller with Momentum Badges
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Flame, TrendingUp, Clock, Zap } from 'lucide-react';
 import {
     rankByVelocity,
-    generateMockTransactions,
-    type VelocityProduct
+    generateMockTransactions
 } from '../engines/TrendVelocityMatrix';
 
 const MOMENTUM_STYLES = {
@@ -61,7 +60,7 @@ export const VelocityTrendDashboard = () => {
             name: `Best Seller ${i + 1}`,
             brand: ['SCARLETT', 'SOMETHINC', 'AVOSKIN', 'WARDAH', 'EMINA'][i % 5],
             price: Math.floor(Math.random() * 100000) + 50000,
-            image: `https://via.placeholder.com/200?text=BS${i + 1}`,
+            image: `https://images.unsplash.com/photo-1601049541289-9b3b7d5d7fb5?auto=format&fit=crop&w=200&q=80`,
             stock: Math.floor(Math.random() * 300) + 20
         }));
         const transactions = generateMockTransactions(base.map(p => p.id), 800);
@@ -148,7 +147,7 @@ export const VelocityTrendDashboard = () => {
                                 <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full rounded-full ${product.depletionRate > 5 ? 'bg-red-500' :
-                                                product.depletionRate > 2 ? 'bg-orange-500' : 'bg-emerald-500'
+                                            product.depletionRate > 2 ? 'bg-orange-500' : 'bg-emerald-500'
                                             }`}
                                         style={{ width: `${Math.min(100, product.depletionRate * 10)}%` }}
                                     />

@@ -71,7 +71,7 @@ export const StorefrontPage = ({ onBack, onProductSelect }: StorefrontPageProps)
 
                 {/* Tab Content */}
                 <div className="space-y-6">
-                    {activeTab === 'products' && <VectorFilterInterface />}
+                    {activeTab === 'products' && <VectorFilterInterface onProductSelect={onProductSelect} />}
                     {activeTab === 'bestseller' && <VelocityTrendDashboard />}
                     {activeTab === 'bundles' && <DynamicBundleBuilder />}
                     {activeTab === 'blog' && <ContextualBlogReader onProductSelect={onProductSelect} />}

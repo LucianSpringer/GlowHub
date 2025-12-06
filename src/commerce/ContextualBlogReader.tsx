@@ -31,7 +31,7 @@ const EmbeddedProductWidget = ({
         return null;
     }
 
-    const imageUrl = product.media[0]?.url || 'https://via.placeholder.com/100';
+    const imageUrl = product.media[0]?.url || 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=100&q=80';
     const stockLabel = product.stockQty < 20 ? 'Stok Menipis!' : 'Tersedia';
     const stockColor = product.stockQty < 20 ? 'text-amber-500' : 'text-emerald-500';
 

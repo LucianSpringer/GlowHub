@@ -23,7 +23,11 @@ const CONCERN_LABELS: Record<ConcernType, { label: string; emoji: string }> = {
     DARK_SPOTS: { label: 'Flek Hitam', emoji: '🌑' }
 };
 
-export const VectorFilterInterface = () => {
+interface VectorFilterInterfaceProps {
+    onProductSelect?: (productId: string) => void;
+}
+
+export const VectorFilterInterface = ({ onProductSelect }: VectorFilterInterfaceProps) => {
     const [products] = useState(generateFilterableProducts);
     const [filterMask, setFilterMask] = useState(0);
 
@@ -79,8 +83,8 @@ export const VectorFilterInterface = () => {
                                         key={key}
                                         onClick={() => toggleConcern(concern)}
                                         className={`relative px-3 py-2.5 rounded-xl text-left transition-all ${isActive
-                                                ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
-                                                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                            ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+                                            : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                                             }`}
                                     >
                                         <span className="text-sm font-medium">
@@ -141,9 +145,13 @@ export const VectorFilterInterface = () => {
             <div className="p-6 border-t border-slate-100 bg-slate-50">
                 <div className="grid grid-cols-4 gap-3">
                     {filteredResult.products.slice(0, 8).map(p => (
-                        <div key={p.id} className="bg-white rounded-xl p-3 shadow-sm">
+                        <div
+                            key={p.id}
+                            onClick={() => onProductSelect?.(p.id)}
+                            className="bg-white rounded-xl p-3 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all group"
+                        >
                             <div className="aspect-square bg-slate-100 rounded-lg mb-2 overflow-hidden">
-                                <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                             </div>
                             <div className="text-[10px] text-slate-400 font-bold">{p.brand}</div>
                             <div className="text-xs font-medium text-slate-800 truncate">{p.name}</div>

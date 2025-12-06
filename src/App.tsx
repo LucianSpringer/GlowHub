@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogIn, Sparkles, LayoutDashboard, LogOut, ShieldCheck, Shield, Store } from 'lucide-react';
+import { LogIn, Sparkles, LayoutDashboard, LogOut, ShieldCheck, Shield, Store, ShoppingCart } from 'lucide-react';
 
 // Components
 import { HeroSection } from './components/HeroSection';
@@ -12,15 +12,18 @@ import { DropshipperDashboard } from './dropship/DropshipperDashboard';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { AccessGate } from './components/AccessGate';
 import { StorefrontPage } from './commerce/StorefrontPage';
+import { CartDrawer } from './components/CartDrawer';
+import { FinancialHandshakeModal } from './components/FinancialHandshakeModal';
 
 // Engines & Logic
 import { useBioMatrix, SkinVector } from './useBioMatrix';
 import { BioRadar } from './BioRadar';
-import { getProductById } from './ProductTelemetry';
+import { getProductById, type ProductTelemetry } from './ProductTelemetry';
 import { PermissionMask, type SecureSession } from './engines/AccessControlSystem';
+import { useCart } from './hooks/useCart';
 
 // --- NAVBAR ---
-const Navbar = ({ scrolled, session, onAuthAction, setView, currentView }: any) => {
+const Navbar = ({ scrolled, session, onAuthAction, setView, currentView, cartCount, onCartClick, cartPulse }: any) => {
   const hasViewDashboard = session && (session.roleMask & PermissionMask.VIEW_DASHBOARD);
   const hasAdminOverride = session && (session.roleMask & PermissionMask.ADMIN_OVERRIDE);
 
@@ -60,6 +63,18 @@ const Navbar = ({ scrolled, session, onAuthAction, setView, currentView }: any) 
               <Shield size={14} /> Admin
             </button>
           )}
+          {/* Cart Icon */}
+          <button
+            onClick={onCartClick}
+            className="relative p-2 hover:bg-pink-50 rounded-full transition-colors"
+          >
+            <ShoppingCart size={20} className={`text-slate-600 hover:text-pink-500 ${cartPulse ? 'animate-bounce' : ''}`} />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
+                {cartCount > 9 ? '9+' : cartCount}
+              </span>
+            )}
+          </button>
         </div>
 
         {session ? (
@@ -100,6 +115,12 @@ export default function App() {
   const [isGateOpen, setIsGateOpen] = useState(false);
   const [gateMode, setGateMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
 
+  // Cart State
+  const cart = useCart();
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [cartPulse, setCartPulse] = useState(false);
+
   const engine = useBioMatrix();
 
   useEffect(() => {
@@ -109,9 +130,38 @@ export default function App() {
   }, []);
 
   const handleProductSelect = (id: string) => {
+    // GhostClickPrevention: Validate product exists
+    const product = getProductById(id);
+    if (!product) {
+      console.warn(`[GhostClickPrevention] Product ${id} not found`);
+      // TODO: Could show toast notification here
+      return;
+    }
     setSelectedProductId(id);
     setView('PRODUCT');
     window.scrollTo(0, 0);
+  };
+
+  // Cart Handlers
+  const handleAddToCart = (product: ProductTelemetry) => {
+    const result = cart.addToCart(product);
+    if (result.success) {
+      // Pulse animation
+      setCartPulse(true);
+      setTimeout(() => setCartPulse(false), 500);
+    }
+    return result;
+  };
+
+  const handleCheckout = () => {
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleCheckoutSuccess = (_orderId: string) => {
+    cart.clearCart();
+    setIsCheckoutOpen(false);
+    // Could navigate to order success page
   };
 
   const handleAuthAction = () => {
@@ -153,6 +203,30 @@ export default function App() {
         onAuthAction={handleAuthAction}
         setView={setView}
         currentView={view}
+        cartCount={cart.itemCount}
+        onCartClick={() => setIsCartOpen(true)}
+        cartPulse={cartPulse}
+      />
+
+      {/* Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        items={cart.items}
+        subtotal={cart.subtotal}
+        tax={cart.tax}
+        totalPrice={cart.totalPrice}
+        onUpdateQuantity={cart.updateQuantity}
+        onRemoveItem={cart.removeFromCart}
+        onCheckout={handleCheckout}
+      />
+
+      {/* Checkout Modal */}
+      <FinancialHandshakeModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        onSuccess={handleCheckoutSuccess}
+        totalAmount={cart.totalPrice}
       />
 
       {view === 'LANDING' ? (
@@ -230,6 +304,7 @@ export default function App() {
           isDropshipper={isDropshipper}
           onBack={() => setView('LANDING')}
           onSelectProduct={handleProductSelect}
+          onAddToCart={handleAddToCart}
         />
       ) : view === 'DASHBOARD' ? (
         <DropshipperDashboard onBack={() => setView('LANDING')} />

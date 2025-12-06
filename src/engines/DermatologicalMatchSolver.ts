@@ -192,13 +192,13 @@ export const generateMockTestimonials = (): Testimonial[] => {
                 sensitivity: Math.floor(Math.random() * 10)
             },
             reviewerName: `Reviewer ${i + 1}`,
-            beforeImage: `https://via.placeholder.com/200?text=Before${i + 1}`,
-            afterImage: `https://via.placeholder.com/200?text=After${i + 1}`,
+            beforeImage: `https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=200&q=80`,
+            afterImage: `https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=200&q=80`,
             weeklyProgress: [
-                `https://via.placeholder.com/150?text=Week1`,
-                `https://via.placeholder.com/150?text=Week2`,
-                `https://via.placeholder.com/150?text=Week3`,
-                `https://via.placeholder.com/150?text=Week4`
+                `https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=150&q=80`,
+                `https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=150&q=80`,
+                `https://images.unsplash.com/photo-1556228453-efd21e1a1f77?auto=format&fit=crop&w=150&q=80`,
+                `https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=150&q=80`
             ],
             usageDurationDays: 14 + Math.floor(Math.random() * 60),
             rating: 3 + Math.random() * 2,

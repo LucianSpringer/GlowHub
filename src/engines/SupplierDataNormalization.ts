@@ -98,7 +98,7 @@ export function transformProduct(
         stockBuffer,
         stockAvailable,
         category: raw.category,
-        imageUrl: raw.imageUrl || 'https://via.placeholder.com/300',
+        imageUrl: raw.imageUrl || 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
         isActive: stockAvailable > 0,
         createdAt: Date.now()
     };

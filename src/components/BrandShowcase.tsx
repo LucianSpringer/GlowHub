@@ -1,65 +1,106 @@
-import { useState } from 'react';
-import { _BRAND_DB } from '../data/MarketData';
-import { Crown, AlertTriangle, TrendingUp } from 'lucide-react';
+// BrandShowcase.tsx - Refactored as BrandOrchestrator
+// Pattern: Engine-driven sorting + Telemetry integration + Dynamic theming
 
-export const BrandShowcase = () => {
+import { useState, useCallback } from 'react';
+import { useBrandResonance } from '../hooks/useBrandResonance';
+import { BrandTelemetrySensor } from './BrandTelemetrySensor';
+import { BrandHologramCard } from './BrandHologramCard';
+import { constructCatalogUrl } from '../engines/SmartRoutingMatrix';
+import { Sparkles } from 'lucide-react';
+
+interface BrandShowcaseProps {
+    userMode?: 'GUEST' | 'DROPSHIPPER';
+    onBrandClick?: (brandSlug: string, url: string) => void;
+}
+
+export const BrandShowcase = ({
+    userMode = 'GUEST',
+    onBrandClick
+}: BrandShowcaseProps) => {
     const [hoveredBrand, setHoveredBrand] = useState<string | null>(null);
+    const { brands, brandOfTheDay, recordHover, recordClick } = useBrandResonance(true);
 
-    const featuredBrands = _BRAND_DB.filter(b => b.isFeatured);
+    const handleInterest = useCallback((brandId: string, duration: number) => {
+        recordHover(brandId, duration);
+    }, [recordHover]);
+
+    const handleClick = useCallback((brandId: string) => {
+        recordClick(brandId);
+
+        const brand = brands.find(b => b.id === brandId);
+        if (brand && onBrandClick) {
+            const url = constructCatalogUrl(brand.slug, { source: 'brand_showcase' });
+            onBrandClick(brand.slug, url);
+        }
+    }, [brands, recordClick, onBrandClick]);
 
     return (
         <section id="brands" className="py-20 bg-white border-b border-slate-100">
             <div className="max-w-7xl mx-auto px-6 text-center mb-12">
-                <span className="text-[#FF6B9D] font-bold tracking-widest text-xs uppercase">Official Partners</span>
-                <h3 className="text-3xl font-bold text-slate-900 mt-2">Curated Local Excellence</h3>
+                <span className="text-[#FF6B9D] font-bold tracking-widest text-xs uppercase">
+                    Official Partners
+                </span>
+                <h3 className="text-3xl font-bold text-slate-900 mt-2">
+                    Curated Local Excellence
+                </h3>
+
+                {/* Brand of the Day indicator */}
+                {brandOfTheDay && (
+                    <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-50 to-purple-50 rounded-full border border-pink-200">
+                        <Sparkles size={14} className="text-pink-500" />
+                        <span className="text-xs text-slate-600">
+                            Trending today: <strong className="text-pink-500">
+                                {brands.find(b => b.id === brandOfTheDay)?.name || 'Loading...'}
+                            </strong>
+                        </span>
+                    </div>
+                )}
             </div>
 
             <div className="flex flex-wrap gap-8 justify-center px-6">
-                {featuredBrands.map((brand) => (
-                    <div
+                {brands.map((brand) => (
+                    <BrandTelemetrySensor
                         key={brand.id}
-                        className="relative group cursor-pointer"
-                        onMouseEnter={() => setHoveredBrand(brand.id)}
-                        onMouseLeave={() => setHoveredBrand(null)}
+                        brandId={brand.id}
+                        onInterest={handleInterest}
+                        onClick={handleClick}
                     >
-                        {/* Brand Logo Placeholder (Text for Purity) */}
-                        <div className="text-2xl md:text-4xl font-black text-slate-300 group-hover:text-[#FF6B9D] transition-colors duration-300 select-none">
-                            {brand.name}
-                        </div>
-
-                        {/* Hover Quick Card */}
-                        <div className={`absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-64 bg-slate-900 text-white p-4 rounded-xl shadow-xl transition-all duration-300 z-30 pointer-events-none ${hoveredBrand === brand.id ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="font-bold text-lg">{brand.name}</span>
-                                {brand.tier === 'PLATINUM' && <Crown size={16} className="text-amber-400" />}
-                            </div>
-                            <div className="text-xs text-slate-400 mb-3 space-y-1">
-                                <div className="flex justify-between">
-                                    <span>Rating:</span> <span className="text-white font-mono">{brand.avgRating} / 5.0</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Products:</span> <span className="text-white font-mono">{brand.productCount} SKUs</span>
-                                </div>
+                        <div
+                            className="relative group cursor-pointer"
+                            onMouseEnter={() => setHoveredBrand(brand.id)}
+                            onMouseLeave={() => setHoveredBrand(null)}
+                        >
+                            {/* Brand Name with Theme Color on Hover */}
+                            <div
+                                className="text-2xl md:text-4xl font-black text-slate-300 transition-all duration-300 select-none group-hover:scale-105"
+                                style={{
+                                    color: hoveredBrand === brand.id ? brand.themeColor : undefined
+                                }}
+                            >
+                                {brand.name}
                             </div>
 
-                            {brand.stockStatus !== 'AMPLE' && (
-                                <div className="flex items-center gap-2 text-[10px] bg-rose-500/20 text-rose-300 px-2 py-1 rounded">
-                                    <AlertTriangle size={12} /> Stock: {brand.stockStatus}
+                            {/* Promotional Badge */}
+                            {brand.promotionalWeight > 0 && (
+                                <div className="absolute -top-2 -right-2 bg-pink-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold animate-pulse">
+                                    PROMO
                                 </div>
                             )}
 
-                            <div className="mt-3 pt-3 border-t border-slate-700">
-                                <div className="text-[10px] text-slate-500 uppercase">Top Pick</div>
-                                <div className="text-xs font-bold text-[#FF6B9D] flex items-center gap-1">
-                                    <TrendingUp size={12} /> {brand.heroProduct}
-                                </div>
-                            </div>
-
-                            {/* Triangle */}
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-8 border-transparent border-t-slate-900"></div>
+                            {/* Hologram Card (Hover) */}
+                            <BrandHologramCard
+                                brand={brand}
+                                isVisible={hoveredBrand === brand.id}
+                                userMode={userMode}
+                            />
                         </div>
-                    </div>
+                    </BrandTelemetrySensor>
                 ))}
+            </div>
+
+            {/* Debug: Resonance Scores (remove in production) */}
+            <div className="mt-8 text-center text-[10px] text-slate-400">
+                Sorted by ResonanceScore • Hover 200ms+ to boost priority
             </div>
         </section>
     );

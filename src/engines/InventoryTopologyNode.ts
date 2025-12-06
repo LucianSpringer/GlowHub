@@ -109,7 +109,7 @@ export const filterProductsByMask = (
         products: matched,
         matchCount: matched.length,
         filterMask: userMask,
-        sortedByRelevance
+        sortedByRelevance: sortByRelevance
     };
 };
 
@@ -158,31 +158,33 @@ export const previewFilterCount = (
     };
 };
 
-// Generate mock filterable products
+// Generate filterable products from real ProductTelemetry
+// This maps vectorMask from ProductTelemetry to concernMask for filtering
+import { PRODUCT_CATALOG } from '../ProductTelemetry';
+
 export const generateFilterableProducts = (): FilterableProduct[] => {
     const specs = ['Acne Specialist', 'Barrier Hero', 'Brightening Expert', 'Anti-Aging Pro', 'Oil Control Master'];
-    const brands = ['SCARLETT', 'SOMETHINC', 'AVOSKIN', 'WARDAH', 'EMINA'];
 
-    return Array.from({ length: 20 }, (_, i) => {
-        // Random concern combination
-        let mask = 0;
-        if (Math.random() > 0.5) mask |= ConcernMask.ACNE;
-        if (Math.random() > 0.5) mask |= ConcernMask.DULL;
-        if (Math.random() > 0.5) mask |= ConcernMask.DRY;
-        if (Math.random() > 0.5) mask |= ConcernMask.OILY;
-        if (Math.random() > 0.6) mask |= ConcernMask.SENSITIVE;
-        if (Math.random() > 0.7) mask |= ConcernMask.AGING;
-        if (mask === 0) mask = ConcernMask.ACNE; // Default
+    return PRODUCT_CATALOG.map((product, i) => {
+        // Map vectorMask to concernMask (simplified mapping)
+        let concernMask = 0;
+        if (product.vectorMask & 0b000010) concernMask |= ConcernMask.ACNE;      // Bit 1: ACNE
+        if (product.vectorMask & 0b000100) concernMask |= ConcernMask.DULL;      // Bit 2: DULL
+        if (product.vectorMask & 0b010000) concernMask |= ConcernMask.AGING;     // Bit 4: AGING
+        if (product.vectorMask & 0b000001) concernMask |= ConcernMask.DRY;       // Bit 0: DRY
+        if (product.vectorMask & 0b001000) concernMask |= ConcernMask.SENSITIVE; // Bit 3: SENSITIVE
+        if (concernMask === 0) concernMask = ConcernMask.ACNE; // Default
 
         return {
-            id: `PROD-${1000 + i}`,
-            name: `Product ${i + 1}`,
-            brand: brands[i % brands.length],
-            concernMask: mask,
+            id: product.id, // Use REAL ProductTelemetry ID
+            name: product.name,
+            brand: product.brand,
+            concernMask,
             specialization: specs[i % specs.length],
-            stock: Math.floor(Math.random() * 500) + 10,
-            price: Math.floor(Math.random() * 150000) + 50000,
-            image: `https://via.placeholder.com/300?text=P${i + 1}`
+            stock: product.stockQty,
+            price: product.marketPrice,
+            image: product.media[0]?.url || 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=300&q=80'
         };
     });
 };
+
