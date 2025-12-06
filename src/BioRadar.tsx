@@ -17,7 +17,12 @@ export const BioRadar: React.FC<BioRadarProps> = ({ mask, width = 300, height = 
         if (!ctx) return;
 
         // HIGH YIELD LOGIC: Trigonometric State Mapping
-        const vectors = Object.keys(SkinVector).filter(k => isNaN(Number(k)));
+        if (!SkinVector) {
+            console.error("SkinVector is undefined!");
+            return;
+        }
+        const vectors = Object.keys(SkinVector);
+        if (!vectors.length) return;
         const total = vectors.length;
         const cx = width / 2;
         const cy = height / 2;
@@ -53,6 +58,7 @@ export const BioRadar: React.FC<BioRadarProps> = ({ mask, width = 300, height = 
             vectors.forEach((key, index) => {
                 const angle = (Math.PI * 2 * index) / total - Math.PI / 2;
                 const flag = (SkinVector as any)[key];
+                if (flag === undefined) return;
                 const isActive = (mask & flag) === flag;
 
                 // Animate magnitude based on bitwise state

@@ -1,433 +1,53 @@
 import { useState, useEffect } from 'react';
-import {
-  Sparkles, ShoppingBag, Star, Heart,
-  ShieldCheck, Truck, Percent, Zap, CheckCircle2, Instagram, LogIn
-} from 'lucide-react';
+import { LogIn, Sparkles } from 'lucide-react';
+
+// Components
+import { HeroSection } from './components/HeroSection';
+import { BrandShowcase } from './components/BrandShowcase';
+import { Testimonials } from './components/Testimonials';
+import { DropshipCTA } from './components/DropshipCTA';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { ProductDetail } from './ProductDetail';
+
+// Engines & Logic
 import { useBioMatrix, SkinVector } from './useBioMatrix';
 import { BioRadar } from './BioRadar';
-import { ProductDetail } from './ProductDetail';
 import { getProductById } from './ProductTelemetry';
 
-
-
-// --- 1. CONFIGURATION VECTORS ---
-
-const THEME = {
-  colors: {
-    primary: '#FF6B9D', // CTA Pink
-    soft: '#F8BFBF',    // Soft Pink
-    mint: '#E0F2F1',
-    peach: '#FFF0E6',
-    text: '#1F2937'
-  },
-  fonts: 'font-sans'
-};
-
-const ADVANTAGE_VECTORS = [
-  {
-    id: 'A1',
-    icon: <Heart className="text-rose-500" size={32} />,
-    title: "100% Brand Lokal",
-    desc: "Bangga buatan Indonesia. Produk asli karya anak bangsa berkualitas internasional."
-  },
-  {
-    id: 'A2',
-    icon: <ShieldCheck className="text-emerald-500" size={32} />,
-    title: "Kurasi Ketat",
-    desc: "Lolos BPOM, Halal, dan rating review 4.8+ sebelum masuk katalog kami."
-  },
-  {
-    id: 'A3',
-    icon: <Percent className="text-orange-500" size={32} />,
-    title: "Harga Lebih Hemat",
-    desc: "10–25% lebih murah dari marketplace lain karena jalur dropship langsung."
-  },
-  {
-    id: 'A4',
-    icon: <Zap className="text-purple-500" size={32} />,
-    title: "Smart Skin Quiz",
-    desc: "Algoritma 30 detik untuk rekomendasi paket sesuai dermatologi kulitmu."
-  },
-  {
-    id: 'A5',
-    icon: <Truck className="text-blue-500" size={32} />,
-    title: "Gratis Ongkir & Bonus",
-    desc: "Free ongkir min. 100rb + selalu ada bonus sample di setiap paket."
-  },
-  {
-    id: 'A6',
-    icon: <ShoppingBag className="text-pink-600" size={32} />,
-    title: "Cicilan 0%",
-    desc: "Belanja skincare impian sekarang, bayar nanti via Kredivo & SPayLater."
-  }
-];
-
-const TESTIMONIAL_DATA = [
-  {
-    id: "T1", name: "Sabrina", age: 24, rating: 5,
-    text: "Dari kusam jadi glowing dalam 2 minggu! Rekomendasi quiz-nya beneran cocok banget.",
-    img: "https://i.pravatar.cc/150?img=5"
-  },
-  {
-    id: "T2", name: "Dinda", age: 21, rating: 5,
-    text: "Suka banget packaging aman dan bonus sample banyak! Pengiriman juga cepet.",
-    img: "https://i.pravatar.cc/150?img=9"
-  },
-  {
-    id: "T3", name: "Rina", age: 29, rating: 5,
-    text: "Akhirnya nemu toko yang kurasinya oke. Gak perlu pusing cek BPOM satu-satu.",
-    img: "https://i.pravatar.cc/150?img=1"
-  }
-];
-
-// --- 2. HIGH-YIELD COMPONENTS ---
-
-const Navbar = ({ scrolled, onLogin, userMode }: any) => (
-  <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'
-    } `}>
+const Navbar = ({ scrolled, onLogin, userMode, setView }: any) => (
+  <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'}`}>
     <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-      <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
-        <div className="bg-[#FF6B9D] p-1.5 rounded-lg text-white">
-          <Sparkles size={20} fill="currentColor" />
-        </div>
-        <span className="font-bold text-xl tracking-tight text-slate-800">
-          GlowHub<span className="text-[#FF6B9D]">.id</span>
-        </span>
+      <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('LANDING')}>
+        <div className="bg-[#FF6B9D] p-1.5 rounded-lg text-white"><Sparkles size={20} fill="currentColor" /></div>
+        <span className="font-bold text-xl text-slate-800">GlowHub<span className="text-[#FF6B9D]">.id</span></span>
       </div>
-
       <div className="hidden md:flex gap-8 text-sm font-medium text-slate-600">
-        <a href="#home" className="hover:text-[#FF6B9D] transition-colors">Home</a>
-        <a href="#brands" className="hover:text-[#FF6B9D] transition-colors">Brand Lokal</a>
-        <a href="#quiz" className="hover:text-[#FF6B9D] transition-colors">Skin Quiz</a>
-        <a href="#testi" className="hover:text-[#FF6B9D] transition-colors">Testimoni</a>
-        <a href="#dropship" className="hover:text-[#FF6B9D] transition-colors">Daftar Dropship</a>
+        <a href="#home" className="hover:text-[#FF6B9D]">Home</a>
+        <a href="#brands" className="hover:text-[#FF6B9D]">Brands</a>
+        <a href="#quiz" className="hover:text-[#FF6B9D]">Quiz</a>
+        <a href="#dropship" className="hover:text-[#FF6B9D]">Dropship</a>
       </div>
-
-      <div className="flex gap-4">
-        <button
-          onClick={onLogin}
-          className={`px-4 py-2 rounded-full text-xs font-bold border transition-all flex items-center gap-2 ${userMode === 'DROPSHIPPER' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:border-[#FF6B9D]'}`}
-        >
-          <LogIn size={14} /> {userMode === 'DROPSHIPPER' ? 'Reseller Mode' : 'Login'}
-        </button>
-        <button className="bg-[#FF6B9D] text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-pink-200 hover:bg-pink-600 transition-all hover:scale-105">
-          Belanja Sekarang
-        </button>
-      </div>
+      <button onClick={onLogin} className={`px-4 py-2 rounded-full text-xs font-bold border flex items-center gap-2 ${userMode === 'DROPSHIPPER' ? 'bg-slate-900 text-white' : 'bg-white border-slate-200 text-slate-600'}`}>
+        <LogIn size={14} /> {userMode === 'DROPSHIPPER' ? 'Dropshipper Mode' : 'Login'}
+      </button>
     </div>
   </nav>
 );
 
-const HeroSection = () => (
-  <section id="home" className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden bg-[#FFF0E6]">
-    <div className="absolute inset-0 z-0">
-      <div className="absolute inset-0 bg-gradient-to-r from-[#F8BFBF]/80 via-white/50 to-transparent z-10" />
-      <img
-        src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=2070&auto=format&fit=crop"
-        alt="Wanita Indonesia Glowing"
-        className="w-full h-full object-cover object-top"
-      />
-    </div>
-
-    <div className="max-w-7xl mx-auto px-6 relative z-20 w-full">
-      <div className="md:w-1/2 space-y-6 animate-fade-in-up">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 backdrop-blur border border-pink-200 text-pink-600 text-xs font-bold tracking-wide">
-          <Star size={12} fill="currentColor" />
-          #1 PLATFORM SKINCARE LOKAL
-        </div>
-
-        <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.1]">
-          Cerah Alami, <br />
-          <span className="text-[#FF6B9D]">100% Lokal Terpercaya</span>
-        </h1>
-
-        <p className="text-lg text-slate-700 max-w-lg leading-relaxed">
-          Kami pilihkan skincare lokal terbaik, kamu tinggal pakai & glow up! Tanpa drama bahan berbahaya, khusus untuk kulit cantikmu.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 pt-4">
-          <button className="bg-[#FF6B9D] text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-pink-600 transition-all shadow-xl shadow-pink-300/50 hover:-translate-y-1">
-            Belanja Sekarang
-          </button>
-          <a href="#quiz" className="px-8 py-4 rounded-full font-bold text-[#FF6B9D] bg-white border-2 border-[#FF6B9D] hover:bg-pink-50 transition-all flex items-center justify-center gap-2">
-            <Zap size={18} /> Ikuti Skin Quiz 30 Detik
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-);
-
-const BrandTicker = () => (
-  <section id="brands" className="py-12 bg-white border-b border-slate-100">
-    <div className="max-w-7xl mx-auto px-6 text-center mb-8">
-      <h3 className="text-lg font-bold text-slate-400 uppercase tracking-widest">Hanya Brand Lokal Terbaik</h3>
-    </div>
-    <div className="overflow-hidden relative">
-      <div className="flex gap-12 items-center justify-center opacity-60 grayscale hover:grayscale-0 transition-all duration-500 flex-wrap px-6">
-        {['SCARLETT', 'SOMETHINC', 'AVOSKIN', 'AZARINE', 'WARDAH', 'WHITELAB', 'DEAR ME BEAUTY'].map((brand) => (
-          <span key={brand} className="text-xl md:text-2xl font-black text-slate-300 hover:text-[#FF6B9D] cursor-pointer transition-colors">
-            {brand}
-          </span>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-const AdvantagesGrid = () => (
-  <section className="py-24 bg-white">
-    <div className="max-w-7xl mx-auto px-6">
-      <div className="text-center mb-16">
-        <span className="text-[#FF6B9D] font-bold tracking-wider uppercase text-sm">Kenapa GlowHub?</span>
-        <h2 className="text-3xl md:text-4xl font-bold mt-2 text-slate-900">6 Alasan Kamu Wajib Belanja Di Sini</h2>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {ADVANTAGE_VECTORS.map((item) => (
-          <div key={item.id} className="group p-8 rounded-3xl bg-[#FFF0E6]/30 border border-transparent hover:border-pink-200 hover:bg-white hover:shadow-xl hover:shadow-pink-100/50 transition-all duration-300">
-            <div className="bg-white w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm mb-6 group-hover:scale-110 transition-transform">
-              {item.icon}
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-3">{item.title}</h3>
-            <p className="text-slate-500 leading-relaxed">{item.desc}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-// --- 3. RESTORED FEATURES: BioScanner & ProductGrid (The Engine) ---
-
-const BioScanner = ({ engine }: { engine: any }) => {
-  const vectors = [
-    { label: "Oily / Berminyak", flag: SkinVector.OILY },
-    { label: "Dry / Kering", flag: SkinVector.DRY },
-    { label: "Sensitive / Sensitif", flag: SkinVector.SENSITIVE },
-    { label: "Acne / Jerawat", flag: SkinVector.ACNE_PRONE },
-    { label: "Dull / Kusam", flag: SkinVector.DULLNESS },
-    { label: "Aging / Penuaan", flag: SkinVector.AGING },
-  ];
-
-  return (
-    <section id="quiz" className="py-20 px-6 scroll-mt-20">
-      <div className="max-w-6xl mx-auto bg-[#E0F2F1] rounded-[3rem] p-8 md:p-12 relative overflow-hidden border border-[#FF6B9D]/10">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/30 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3" />
-
-        <div className="grid md:grid-cols-2 gap-12 items-center relative z-10">
-
-          {/* LEFT COLUMN: VISUALIZER (High Complexity) */}
-          <div className="text-center md:text-left">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              Bio-Metric Scan
-            </h2>
-            <p className="text-slate-600 text-lg mb-8">
-              Real-time dermal topography analysis.
-            </p>
-            <div className="bg-white/50 rounded-3xl p-4 shadow-inner">
-              {/* THE CANVAS INJECTION */}
-              <BioRadar mask={engine.activeMask} />
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN: CONTROLS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {vectors.map((v) => {
-              const isActive = (engine.activeMask & v.flag) === v.flag;
-              return (
-                <button
-                  key={v.flag}
-                  onClick={() => engine.toggleBioMarker(v.flag)}
-                  className={`
-                                        relative px-6 py-4 rounded-xl text-left transition-all duration-200 border-2 flex justify-between items-center group
-                                        ${isActive
-                      ? 'border-[#FF6B9D] bg-white text-[#FF6B9D] shadow-lg scale-[1.02]'
-                      : 'border-white bg-white/60 text-slate-600 hover:border-pink-200 hover:bg-white'
-                    }
-                                    `}
-                >
-                  <div className="font-bold text-sm">{v.label}</div>
-                  {isActive ? (
-                    <CheckCircle2 className="text-[#FF6B9D]" size={20} />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full border-2 border-slate-200 group-hover:border-pink-300" />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-
-const ProductGrid = ({ products, activeMask, onSelectProduct }: { products: any[], activeMask: number, onSelectProduct: (id: string) => void }) => (
-  <section className="max-w-7xl mx-auto px-6 pb-24">
-    {activeMask === 0 ? (
-      <div className="text-center p-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
-        <Sparkles className="mx-auto text-slate-300 mb-4" size={48} />
-        <p className="text-slate-500 font-medium">Pilih bio-marker di atas untuk melihat rekomendasi produk.</p>
-      </div>
-    ) : (
-      <>
-        <div className="flex justify-between items-end mb-10 animate-fade-in-up">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Rekomendasi Personal</h2>
-            <p className="text-slate-500 text-sm mt-1">Berdasarkan analisa profil kulitmu</p>
-          </div>
-          <span className="bg-[#FF6B9D]/10 text-[#FF6B9D] px-4 py-1.5 rounded-full text-xs font-bold">
-            {products.length} MATCHES FOUND
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {products.map((p: any) => {
-            const matchScore = ((p.vectorMask & activeMask) !== 0);
-            return (
-              <div key={p.id} onClick={() => onSelectProduct(p.id)} className="group bg-white rounded-3xl border border-slate-100 overflow-hidden hover:shadow-2xl hover:shadow-pink-100/50 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer">
-                <div className="relative h-64 overflow-hidden bg-slate-100">
-                  <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  {matchScore && (
-                    <div className="absolute top-4 right-4 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-                      <Sparkles size={10} /> {((p.molecularScore || 0.95) * 100).toFixed(0)}% MATCH
-                    </div>
-                  )}
-                </div>
-                <div className="p-6">
-                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{p.brand}</div>
-                  <h3 className="font-bold text-lg text-slate-900 mb-2 leading-tight">{p.name}</h3>
-
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {/* Simple visualization of flags matching */}
-                    {(p.vectorMask & SkinVector.OILY) ? <span className="text-[10px] px-2 py-1 bg-slate-100 rounded text-slate-500">Oily</span> : null}
-                    {(p.vectorMask & SkinVector.ACNE_PRONE) ? <span className="text-[10px] px-2 py-1 bg-slate-100 rounded text-slate-500">Acne</span> : null}
-                    {(p.vectorMask & SkinVector.SENSITIVE) ? <span className="text-[10px] px-2 py-1 bg-slate-100 rounded text-slate-500">Sensitive</span> : null}
-                  </div>
-
-                  <div className="flex justify-between items-center pt-4 border-t border-slate-50">
-                    <div className="text-[#FF6B9D] font-bold text-lg">Rp {p.price.toLocaleString()}</div>
-                    <button className="bg-slate-900 text-white p-2.5 rounded-xl hover:bg-[#FF6B9D] transition-colors shadow-lg shadow-slate-200">
-                      <ShoppingBag size={18} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </>
-    )}
-  </section>
-);
-
-const TestimonialStream = () => (
-  <section id="testi" className="py-24 bg-[#E0F2F1]/30">
-    <div className="max-w-7xl mx-auto px-6">
-      <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-slate-900">
-        Ribuan Customer Sudah <span className="text-[#FF6B9D]">Glow Up</span>
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {TESTIMONIAL_DATA.map((t) => (
-          <div key={t.id} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative">
-            <div className="flex gap-1 mb-4 text-yellow-400">
-              {[...Array(t.rating)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
-            </div>
-            <p className="text-slate-600 italic mb-6">"{t.text}"</p>
-            <div className="flex items-center gap-4">
-              <img src={t.img} alt={t.name} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md" />
-              <div>
-                <div className="font-bold text-slate-900">{t.name}, {t.age} th</div>
-                <div className="text-xs text-slate-400">Verified Buyer</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-const DropshipGateway = () => (
-  <section id="dropship" className="py-24 bg-gradient-to-br from-[#FF6B9D] to-orange-400 text-white relative overflow-hidden">
-    <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-      <h2 className="text-4xl md:text-5xl font-extrabold mb-6">Mau Penghasilan Tambahan?</h2>
-      <p className="text-xl mb-10 text-white/90">
-        Jadi Dropshipper GlowHub! Keuntungan 20–40%, tanpa stok barang, dan materi promosi kami sediakan.
-      </p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-left">
-        {[
-          { title: "Profit 20-40%", desc: "Margin keuntungan tinggi tiap produk." },
-          { title: "Tanpa Stok", desc: "Kami yang packing & kirim ke customer." },
-          { title: "Materi Gratis", desc: "Foto & video promosi siap posting." },
-        ].map((b, i) => (
-          <div key={i} className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20">
-            <CheckCircle2 className="mb-4 text-white" />
-            <h4 className="font-bold text-lg">{b.title}</h4>
-            <p className="text-sm text-white/80">{b.desc}</p>
-          </div>
-        ))}
-      </div>
-      <button className="bg-white text-[#FF6B9D] px-10 py-4 rounded-full font-bold text-xl hover:bg-slate-50 transition-all shadow-2xl transform hover:-translate-y-1">
-        Daftar Jadi Reseller Sekarang
-      </button>
-    </div>
-  </section>
-);
-
 const Footer = () => (
-  <footer className="bg-slate-900 text-white pt-16 pb-8">
-    <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-12 mb-12">
-      <div className="col-span-1 md:col-span-1">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles size={24} className="text-[#FF6B9D]" />
-          <span className="font-bold text-2xl">GlowHub</span>
-        </div>
-        <p className="text-gray-400 text-sm leading-relaxed">
-          100% Lokal Terpercaya. Platform skincare kurasi terbaik untuk wanita Indonesia.
-        </p>
-      </div>
-      <div>
-        <h4 className="font-bold text-lg mb-4">Info</h4>
-        <ul className="space-y-2 text-gray-400 text-sm">
-          <li><a href="#" className="hover:text-[#FF6B9D]">Tentang Kami</a></li>
-          <li><a href="#" className="hover:text-[#FF6B9D]">Kebijakan Privasi</a></li>
-          <li><a href="#" className="hover:text-[#FF6B9D]">Syarat & Ketentuan</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4 className="font-bold text-lg mb-4">Bantuan</h4>
-        <a href="#" className="flex items-center gap-2 text-green-400 hover:text-green-300 font-semibold mb-4">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-5 h-5" alt="WA" />
-          Chat WhatsApp
-        </a>
-      </div>
-      <div>
-        <h4 className="font-bold text-lg mb-4">Sosial Media</h4>
-        <div className="flex gap-4">
-          <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#FF6B9D] transition-colors cursor-pointer">
-            <Instagram size={20} />
-          </div>
-        </div>
-      </div>
-    </div>
-    <div className="max-w-7xl mx-auto px-6 text-center pt-8 border-t border-gray-800 text-sm text-gray-500">
-      &copy; 2025 GlowHub Indonesia – 100% Lokal Terpercaya
-    </div>
+  <footer className="bg-slate-900 text-white py-12 text-center text-sm text-slate-500">
+    &copy; 2025 GlowHub Indonesia. All rights reserved.
   </footer>
 );
 
-// --- 4. MAIN ASSEMBLY ---
+// --- MAIN APP ---
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const [view, setView] = useState<'LANDING' | 'PRODUCT'>('LANDING');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [userMode, setUserMode] = useState<'GUEST' | 'DROPSHIPPER'>('GUEST'); // Simulates Login
+  const [userMode, setUserMode] = useState<'GUEST' | 'DROPSHIPPER'>('GUEST');
 
-  // Wire up the engine (The Logic Layer)
   const engine = useBioMatrix();
 
   useEffect(() => {
@@ -437,47 +57,95 @@ export default function App() {
   }, []);
 
   const handleProductSelect = (id: string) => {
-    // Map the old ID format (L-01) to new Telemetry ID if needed, 
-    // for this demo we assume ID consistency or mock fetch
     setSelectedProductId(id);
     setView('PRODUCT');
     window.scrollTo(0, 0);
   };
 
-  const toggleUserMode = () => {
-    setUserMode(prev => prev === 'GUEST' ? 'DROPSHIPPER' : 'GUEST');
-  };
-
   return (
-    <div className={`min-h-screen bg-white text-[#1F2937] ${THEME.fonts} `}>
+    <div className="min-h-screen bg-white text-[#1F2937] font-sans">
+      <Navbar
+        scrolled={scrolled}
+        onLogin={() => setUserMode(prev => prev === 'GUEST' ? 'DROPSHIPPER' : 'GUEST')}
+        userMode={userMode}
+        setView={setView}
+      />
+
       {view === 'LANDING' ? (
-        <>
-          <Navbar scrolled={scrolled} onLogin={toggleUserMode} userMode={userMode} />
-          <main>
-            <HeroSection />
-            <BrandTicker />
-            <AdvantagesGrid />
+        <main>
+          <HeroSection
+            userMode={userMode}
+            onCtaClick={() => document.getElementById('quiz')?.scrollIntoView({ behavior: 'smooth' })}
+          />
 
-            {/* The Integrated Engine Sections */}
-            <BioScanner engine={engine} />
-            <ProductGrid
-              products={engine.recommendations}
-              activeMask={engine.activeMask}
-              onSelectProduct={handleProductSelect}
-            />
+          <BrandShowcase />
 
-            <TestimonialStream />
-            <DropshipGateway />
-          </main>
-          <Footer />
-        </>
+          {/* ENHANCED BIO-SCANNER (QUIZ LAYER) */}
+          <section id="quiz" className="py-24 px-6">
+            <div className="max-w-6xl mx-auto bg-[#E0F2F1] rounded-[3rem] p-8 md:p-16 relative overflow-hidden">
+              <div className="grid md:grid-cols-2 gap-12 items-center relative z-10">
+                <div>
+                  <h2 className="text-4xl font-bold text-slate-900 mb-4">Dermal Calibration</h2>
+                  <p className="text-slate-600 mb-8">Identify your skin vectors to unlock high-efficacy matches.</p>
+                  <div className="bg-white/60 p-6 rounded-3xl shadow-inner backdrop-blur-sm">
+                    <ErrorBoundary>
+                      <BioRadar mask={engine.activeMask} />
+                    </ErrorBoundary>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(SkinVector).map(([key, flag]) => {
+                    const isActive = (engine.activeMask & flag) === flag;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => engine.toggleBioMarker(flag)}
+                        className={`px-4 py-3 text-sm font-bold rounded-xl border-2 transition-all ${isActive ? 'bg-[#FF6B9D] border-[#FF6B9D] text-white' : 'bg-white border-white text-slate-500 hover:border-pink-200'}`}
+                      >
+                        {key}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* RESULTS GRID */}
+              {engine.activeMask !== 0 && (
+                <div className="mt-12 pt-12 border-t border-slate-200/50">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="font-bold text-xl">Calibrated Protocols</h3>
+                    <span className="bg-white px-3 py-1 rounded-full text-xs font-mono border border-slate-200">{engine.recommendations.length} Matches</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {engine.recommendations.map((p: any) => (
+                      <div key={p.id} onClick={() => handleProductSelect(p.id)} className="bg-white p-4 rounded-2xl cursor-pointer hover:shadow-xl transition-all group">
+                        <div className="aspect-square bg-slate-100 rounded-xl mb-4 overflow-hidden">
+                          <img src={p.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        </div>
+                        <div className="text-xs font-bold text-slate-400 mb-1">{p.brand}</div>
+                        <div className="font-bold text-slate-900">{p.name}</div>
+                        <div className="text-[#FF6B9D] font-bold mt-2">Rp {p.price.toLocaleString()}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <Testimonials />
+
+          <DropshipCTA onRegister={() => alert("Redirect to Registration Logic")} />
+        </main>
       ) : (
         <ProductDetail
           product={getProductById(selectedProductId!)}
           isDropshipper={userMode === 'DROPSHIPPER'}
           onBack={() => setView('LANDING')}
+          onSelectProduct={handleProductSelect}
         />
       )}
+      <Footer />
     </div>
   );
 }

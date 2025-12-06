@@ -1,201 +1,220 @@
 import { useState } from 'react';
 import {
-    ShoppingCart, Star, Info, ShieldCheck, TrendingUp,
-    AlertCircle, CheckCircle2, RefreshCw, Download
+    ShoppingCart, Star, Info, TrendingUp,
+    CheckCircle2, RefreshCw, Download,
+    Clock, ListChecks, ArrowRight
 } from 'lucide-react';
 import {
     useSupplyChainResonance,
     useMarginVelocity,
     useDermalGraph,
-    IngredientFunction
+    getRelatedProducts,
 } from './ProductTelemetry';
 import type { ProductTelemetry } from './ProductTelemetry';
 
+export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelectProduct }: {
+    product: ProductTelemetry,
+    isDropshipper?: boolean,
+    onBack: () => void,
+    onSelectProduct: (id: string) => void
+}) => {
 
-
-export const ProductDetail = ({ product, isDropshipper = false, onBack }: { product: ProductTelemetry, isDropshipper?: boolean, onBack: () => void }) => {
-    // Wiring the Engines
+    // Engine Wiring
     const stockEngine = useSupplyChainResonance(product.stockQty);
     const profitEngine = useMarginVelocity(product.basePrice);
     const ingredients = useDermalGraph(product.ingredients);
+    const relatedProducts = getRelatedProducts(product.id);
 
-    const [activeMedia, setActiveMedia] = useState(0);
+    const [activeMedia] = useState(0);
 
     return (
         <div className="min-h-screen bg-white pb-20 animate-fade-in-up">
-            {/* Nav / Back */}
-            <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-4 flex justify-between items-center">
-                <button onClick={onBack} className="text-sm font-semibold text-slate-500 hover:text-[#FF6B9D]">
-                    ← Back to Store
+            {/* Header / Nav */}
+            <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-4 flex justify-between items-center shadow-sm">
+                <button onClick={onBack} className="text-sm font-semibold text-slate-500 hover:text-[#FF6B9D] flex items-center gap-2">
+                    <ArrowRight className="rotate-180" size={16} /> Kembali
                 </button>
-                <div className="text-xs font-mono text-slate-400">
-                    SKU: {product.sku} | SYNC: {stockEngine.status === 'UPDATING' ? '...' : 'OK'}
+                <div className="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded">
+                    SKU: {product.sku} • SYNC: {stockEngine.status === 'UPDATING' ? '...' : 'OK'}
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-2 gap-16">
+            <div className="max-w-7xl mx-auto px-6 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
 
-                {/* 1. MEDIA GALLERY */}
-                <div className="space-y-6">
-                    <div className="aspect-square rounded-3xl overflow-hidden bg-slate-50 border border-slate-100 relative group">
-                        <img
-                            src={product.media[activeMedia].url}
-                            alt={product.name}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                        {isDropshipper && (
-                            <button className="absolute bottom-4 right-4 bg-white/90 p-2 rounded-full shadow-lg hover:text-[#FF6B9D]">
-                                <Download size={20} />
-                            </button>
-                        )}
-                    </div>
-                    <div className="flex gap-4 overflow-x-auto pb-2">
-                        {product.media.map((m, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setActiveMedia(i)}
-                                className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${activeMedia === i ? 'border-[#FF6B9D]' : 'border-transparent opacity-70'}`}
-                            >
-                                <img src={m.url} className="w-full h-full object-cover" />
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* 2. PRODUCT INFO & LOGIC */}
-                <div className="space-y-10">
-
-                    {/* Header */}
-                    <div>
-                        <div className="flex items-center gap-3 mb-4">
-                            <span className="bg-[#FF6B9D]/10 text-[#FF6B9D] px-3 py-1 rounded-full text-xs font-bold tracking-wider">
-                                {product.brand}
-                            </span>
-                            <div className="flex items-center gap-1 text-amber-500 text-sm font-bold">
-                                <Star size={14} fill="currentColor" />
-                                <span>4.8</span>
-                                <span className="text-slate-400 font-normal">(142 Reviews)</span>
-                            </div>
-                        </div>
-                        <h1 className="text-4xl font-extrabold text-slate-900 mb-4">{product.name}</h1>
-                        <p className="text-slate-600 leading-relaxed text-lg">
-                            Advanced dermatological formula designed to target specific skin vectors using high-efficacy molecular compounds.
-                        </p>
-                    </div>
-
-                    {/* Stock & Price Logic */}
-                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-6">
-                        <div>
-                            <div className="text-3xl font-bold text-slate-900">
-                                Rp {product.marketPrice.toLocaleString()}
-                            </div>
+                    {/* LEFT: VISUALS */}
+                    <div className="space-y-6">
+                        <div className="aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 relative group shadow-sm">
+                            <img
+                                src={product.media[activeMedia]?.url}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                            />
                             {isDropshipper && (
-                                <div className="text-xs text-slate-500 mt-1 font-mono">
-                                    BASE: Rp {product.basePrice.toLocaleString()}
-                                </div>
+                                <button className="absolute bottom-4 right-4 bg-white text-slate-700 p-3 rounded-full shadow-lg hover:text-[#FF6B9D] hover:scale-110 transition-all">
+                                    <Download size={20} />
+                                </button>
                             )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${stockEngine.stockStatus.bg} ${stockEngine.stockStatus.color}`}>
-                                {stockEngine.status === 'UPDATING' ? <RefreshCw size={12} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                {stockEngine.stockStatus.label} ({stockEngine.stock})
-                            </div>
                         </div>
                     </div>
 
-                    {/* 5. PROFIT ESTIMATOR (Dropshipper Only) */}
-                    {isDropshipper && (
-                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp size={100} /></div>
-                            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                                <TrendingUp size={18} className="text-[#FF6B9D]" />
-                                Margin Velocity Calculator
-                            </h3>
+                    {/* RIGHT: LOGIC & INFO */}
+                    <div className="space-y-8">
 
-                            <div className="grid grid-cols-2 gap-8 mb-6 relative z-10">
+                        {/* Title & Brand */}
+                        <div>
+                            <div className="flex items-center gap-3 mb-3">
+                                <span className="bg-[#FF6B9D]/10 text-[#FF6B9D] px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase">
+                                    {product.brand}
+                                </span>
+                                {product.reviews.length > 0 && (
+                                    <div className="flex items-center gap-1 text-amber-500 text-sm font-bold">
+                                        <Star size={14} fill="currentColor" />
+                                        <span>4.9</span>
+                                        <span className="text-slate-400 font-normal">({product.reviews.length} Ulasan)</span>
+                                    </div>
+                                )}
+                            </div>
+                            <h1 className="text-4xl font-black text-slate-900 mb-4 leading-tight">{product.name}</h1>
+
+                            {/* Stock & Price */}
+                            <div className="flex items-end justify-between border-b border-slate-100 pb-6">
                                 <div>
-                                    <label className="text-xs text-slate-400 uppercase tracking-widest block mb-2">Selling Price</label>
-                                    <input
-                                        type="number"
-                                        value={profitEngine.sellingPrice}
-                                        onChange={(e) => profitEngine.setSellingPrice(Number(e.target.value))}
-                                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white font-mono focus:border-[#FF6B9D] focus:outline-none"
-                                    />
+                                    <div className="text-3xl font-bold text-[#FF6B9D]">
+                                        Rp {product.marketPrice.toLocaleString()}
+                                    </div>
+                                    {isDropshipper && (
+                                        <div className="text-xs text-slate-500 font-mono mt-1">
+                                            HPP: Rp {product.basePrice.toLocaleString()}
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-xs text-slate-400 uppercase tracking-widest block mb-2">Est. Profit</div>
-                                    <div className={`text-2xl font-bold font-mono ${profitEngine.metrics.isHealthy ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                        Rp {profitEngine.metrics.profit.toLocaleString()}
-                                    </div>
-                                    <div className="text-xs text-slate-400">
-                                        Margin: {profitEngine.metrics.margin}%
-                                    </div>
+                                <div className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 ${stockEngine.stockStatus.bg} ${stockEngine.stockStatus.color}`}>
+                                    {stockEngine.status === 'UPDATING' ? <RefreshCw size={12} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                    {stockEngine.stockStatus.label} ({stockEngine.stock})
                                 </div>
                             </div>
-                            {!profitEngine.metrics.isHealthy && (
-                                <div className="flex items-center gap-2 text-xs text-rose-300 bg-rose-900/30 p-2 rounded-lg">
-                                    <AlertCircle size={12} /> Low yield warning. Consider raising price.
-                                </div>
-                            )}
                         </div>
-                    )}
 
-                    {/* CTA */}
-                    <div className="flex gap-4">
-                        <button
-                            disabled={!stockEngine.stockStatus.actionable}
-                            className="flex-1 bg-[#FF6B9D] text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-pink-200/50 hover:bg-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-                        >
-                            <ShoppingCart size={20} />
-                            {stockEngine.stockStatus.actionable ? 'Add to Cart' : 'Out of Stock'}
-                        </button>
-                    </div>
-
-                    {/* 2. INGREDIENT & BENEFIT BREAKDOWN */}
-                    <div className="border-t border-slate-100 pt-8">
-                        <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
-                            <Info size={18} className="text-[#FF6B9D]" /> Molecular Composition
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {ingredients.map(ing => (
-                                <div key={ing.id} className="p-4 rounded-xl border border-slate-100 hover:border-pink-100 hover:bg-pink-50/30 transition-all">
-                                    <div className="font-bold text-sm text-slate-800 mb-1">{ing.name}</div>
-                                    <p className="text-xs text-slate-500 leading-relaxed">{ing.description}</p>
-                                    <div className="mt-2 flex gap-2">
-                                        {(ing.functionMask & IngredientFunction.ACNE_FIGHTING) ? <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded">Acne</span> : null}
-                                        {(ing.functionMask & IngredientFunction.BRIGHTENING) ? <span className="text-[10px] bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded">Bright</span> : null}
-                                        {(ing.functionMask & IngredientFunction.HYDRATING) ? <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded">Hydra</span> : null}
+                        {/* PROFIT ESTIMATOR (Dropshipper) */}
+                        {isDropshipper && (
+                            <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group">
+                                <div className="absolute -right-10 -top-10 text-white/5 rotate-12 group-hover:rotate-0 transition-transform duration-700">
+                                    <TrendingUp size={150} />
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-bold flex items-center gap-2">
+                                            <TrendingUp size={18} className="text-emerald-400" />
+                                            Profit Simulator
+                                        </h3>
+                                        {profitEngine.metrics.isHealthy ?
+                                            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">High Yield</span> :
+                                            <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-1 rounded">Low Margin</span>
+                                        }
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
 
-                    {/* 4. REVIEWS (Marketplace Sync) */}
-                    <div className="border-t border-slate-100 pt-8">
-                        <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
-                            <ShieldCheck size={18} className="text-[#FF6B9D]" /> Marketplace Verification
-                        </h3>
-                        <div className="space-y-4">
-                            {product.reviews.map(review => (
-                                <div key={review.id} className="bg-slate-50 p-4 rounded-xl text-sm">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div className="font-bold text-slate-800">{review.user}</div>
-                                        <div className="flex items-center gap-1 text-[10px] bg-white border border-slate-200 px-2 py-1 rounded">
-                                            {review.source === 'Shopee' ? <span className="text-orange-500">Shopee</span> : <span className="text-green-500">Tokopedia</span>}
-                                            {review.isVerified && <CheckCircle2 size={10} className="text-blue-500" />}
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="text-[10px] text-slate-400 uppercase tracking-widest block mb-2">Harga Jual Kamu</label>
+                                            <div className="flex items-center bg-slate-800 rounded-lg px-3 border border-slate-700 focus-within:border-[#FF6B9D]">
+                                                <span className="text-slate-400 text-sm">Rp</span>
+                                                <input
+                                                    type="number"
+                                                    value={profitEngine.sellingPrice}
+                                                    onChange={(e) => profitEngine.setSellingPrice(Number(e.target.value))}
+                                                    className="w-full bg-transparent py-2 px-2 text-white font-mono focus:outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <label className="text-[10px] text-slate-400 uppercase tracking-widest block mb-2">Potensi Profit</label>
+                                            <div className={`text-2xl font-bold font-mono ${profitEngine.metrics.isHealthy ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                +{profitEngine.metrics.profit.toLocaleString()}
+                                            </div>
+                                            <div className="text-[10px] text-slate-500">Margin: {profitEngine.metrics.margin}%</div>
                                         </div>
                                     </div>
-                                    <div className="flex text-amber-400 mb-2">
-                                        {[...Array(review.rating)].map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* CTA */}
+                        <button
+                            disabled={!stockEngine.stockStatus.actionable}
+                            className="w-full bg-[#FF6B9D] hover:bg-pink-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-pink-200/50 transition-all disabled:opacity-50 flex justify-center items-center gap-3"
+                        >
+                            <ShoppingCart size={20} />
+                            {stockEngine.stockStatus.actionable ? 'Tambah ke Keranjang' : 'Stok Habis'}
+                        </button>
+
+                        {/* USAGE GUIDE (New Feature) */}
+                        <div className="bg-[#E0F2F1]/50 rounded-2xl p-6 border border-[#E0F2F1]">
+                            <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <ListChecks size={18} className="text-teal-600" /> Cara Pemakaian
+                            </h3>
+                            <div className="space-y-3">
+                                {product.usage.map((step, idx) => (
+                                    <div key={idx} className="flex gap-3 items-start">
+                                        <div className="bg-white text-teal-600 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-sm shrink-0">
+                                            {step.order}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-slate-700">{step.text}</p>
+                                            <div className="flex gap-2 mt-1">
+                                                {step.time !== 'PM' && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded flex items-center gap-1"><Clock size={10} /> AM</span>}
+                                                {step.time !== 'AM' && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded flex items-center gap-1"><Clock size={10} /> PM</span>}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p className="text-slate-600">{review.text}</p>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* INGREDIENTS */}
+                        <div>
+                            <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <Info size={18} className="text-[#FF6B9D]" /> Key Ingredients
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {ingredients.map(ing => (
+                                    <div key={ing.id} className="p-3 rounded-xl border border-slate-100 bg-white hover:shadow-md transition-all">
+                                        <div className="font-bold text-xs text-slate-800 mb-1">{ing.name}</div>
+                                        <p className="text-[10px] text-slate-500 leading-relaxed">{ing.description}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                {/* RELATED PRODUCTS (New Feature) */}
+                {relatedProducts.length > 0 && (
+                    <div className="mt-20 border-t border-slate-100 pt-12">
+                        <h3 className="text-2xl font-bold text-slate-900 mb-8 text-center">
+                            Produk Serupa
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {relatedProducts.map(p => (
+                                <div
+                                    key={p.id}
+                                    onClick={() => onSelectProduct(p.id)}
+                                    className="bg-white rounded-2xl p-4 border border-slate-100 hover:shadow-xl transition-all cursor-pointer group"
+                                >
+                                    <div className="aspect-[4/3] bg-slate-50 rounded-xl overflow-hidden mb-4 relative">
+                                        <img src={p.media[0]?.url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                        <div className="absolute top-2 right-2 bg-white/90 text-[10px] font-bold px-2 py-1 rounded-full">
+                                            {p.brand}
+                                        </div>
+                                    </div>
+                                    <h4 className="font-bold text-slate-900 mb-1">{p.name}</h4>
+                                    <div className="text-[#FF6B9D] font-bold">Rp {p.marketPrice.toLocaleString()}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
-
-                </div>
+                )}
             </div>
         </div>
     );

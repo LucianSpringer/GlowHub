@@ -1,15 +1,17 @@
 import { useState, useMemo, useCallback } from 'react';
 
 // --- CORE BITWISE LOGIC (High Yield: Complexity) ---
-export enum SkinVector {
-    NORMAL = 1 << 0, // 1
-    OILY = 1 << 1, // 2
-    DRY = 1 << 2, // 4
-    SENSITIVE = 1 << 3, // 8
-    ACNE_PRONE = 1 << 4, // 16
-    AGING = 1 << 5, // 32
-    DULLNESS = 1 << 6  // 64
-}
+export const SkinVector = {
+    NORMAL: 1 << 0, // 1
+    OILY: 1 << 1, // 2
+    DRY: 1 << 2, // 4
+    SENSITIVE: 1 << 3, // 8
+    ACNE_PRONE: 1 << 4, // 16
+    AGING: 1 << 5, // 32
+    DULLNESS: 1 << 6  // 64
+} as const;
+
+export type SkinVector = typeof SkinVector[keyof typeof SkinVector];
 
 interface BioProduct {
     id: string;
@@ -83,9 +85,9 @@ export function useBioMatrix() {
     }, [activeMask]);
 
     const activeMarkers = useMemo(() => {
-        return Object.keys(SkinVector)
-            .filter(key => isNaN(Number(key)))
-            .filter(key => (activeMask & (SkinVector as any)[key]) !== 0);
+        return Object.entries(SkinVector)
+            .filter(([_, flag]) => (activeMask & flag) !== 0)
+            .map(([key]) => key);
     }, [activeMask]);
 
     return { activeMask, toggleBioMarker, recommendations, activeMarkers };

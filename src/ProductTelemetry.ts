@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 
-// --- 1. DATA STRUCTURES (High Density) ---
+// --- 1. DATA STRUCTURES ---
 
 export const IngredientFunction = {
     BRIGHTENING: 1 << 0,
@@ -18,17 +18,23 @@ export interface Ingredient {
     name: string;
     functionMask: number;
     description: string;
-    molecularWeight?: string; // Scientific filler
 }
 
 export interface Review {
     id: string;
     user: string;
-    rating: 1 | 2 | 3 | 4 | 5;
+    rating: number;
     text: string;
     source: 'GlowHub' | 'Shopee' | 'Tokopedia';
     isVerified: boolean;
     timestamp: number;
+}
+
+export interface UsageStep {
+    order: number;
+    text: string;
+    time: 'AM' | 'PM' | 'BOTH';
+    icon?: string;
 }
 
 export interface ProductTelemetry {
@@ -36,101 +42,136 @@ export interface ProductTelemetry {
     sku: string;
     name: string;
     brand: string;
-    basePrice: number; // HPP
-    marketPrice: number; // MSRP
+    basePrice: number;
+    marketPrice: number;
     stockQty: number;
-    lastSync: number;
-    ingredients: string[]; // IDs
-    media: { type: 'image' | 'video', url: string, thumbnail?: string }[];
+    ingredients: string[];
+    media: { type: 'image' | 'video', url: string }[];
     reviews: Review[];
     benefitClaims: string[];
+    usage: UsageStep[];
+    vectorMask: number; // For compatibility
 }
 
-// --- 2. MOCK DATABASE (Entropy Injection) ---
+// --- 2. ENTROPY DATABASE (Expanded) ---
 
 const _INGREDIENT_DB: Record<string, Ingredient> = {
-    'ING-01': { id: 'ING-01', name: 'Niacinamide 10%', functionMask: IngredientFunction.BRIGHTENING | IngredientFunction.ACNE_FIGHTING, description: "Vitamin B3 derivative. Regulates sebum and inhibits melanosome transfer." },
-    'ING-02': { id: 'ING-02', name: 'Hyaluronic Acid', functionMask: IngredientFunction.HYDRATING | IngredientFunction.BARRIER_REPAIR, description: "Humectant capable of holding 1000x its weight in water." },
-    'ING-03': { id: 'ING-03', name: 'Salicylic Acid', functionMask: IngredientFunction.ACNE_FIGHTING | IngredientFunction.EXFOLIATING, description: "Beta Hydroxy Acid (BHA). Oil-soluble keratolytic agent." },
-    'ING-04': { id: 'ING-04', name: 'Ceramide NP', functionMask: IngredientFunction.BARRIER_REPAIR, description: "Lipid molecule essential for stratum corneum integrity." },
+    'ING-01': { id: 'ING-01', name: 'Niacinamide 10%', functionMask: IngredientFunction.BRIGHTENING | IngredientFunction.ACNE_FIGHTING, description: "Vitamin B3 derivative. Regulates sebum." },
+    'ING-02': { id: 'ING-02', name: 'Hyaluronic Acid', functionMask: IngredientFunction.HYDRATING, description: "Holds 1000x weight in water." },
+    'ING-03': { id: 'ING-03', name: 'Salicylic Acid', functionMask: IngredientFunction.ACNE_FIGHTING | IngredientFunction.EXFOLIATING, description: "BHA keratolytic agent." },
+    'ING-04': { id: 'ING-04', name: 'Ceramide NP', functionMask: IngredientFunction.BARRIER_REPAIR, description: "Lipid barrier restoration." },
+    'ING-05': { id: 'ING-05', name: 'Retinol 0.5%', functionMask: IngredientFunction.ANTI_AGING, description: "Cell turnover accelerator." },
+    'ING-06': { id: 'ING-06', name: 'Centella Asiatica', functionMask: IngredientFunction.HYDRATING | IngredientFunction.BARRIER_REPAIR, description: "Soothing botanical extract." },
 };
 
 const _PRODUCT_DB: ProductTelemetry[] = [
     {
         id: 'L-01', sku: 'GH-SCAR-001', name: 'Phyto-Biotic Serum', brand: 'SCARLETT',
-        basePrice: 55000, marketPrice: 75000, stockQty: 142, lastSync: Date.now(),
+        basePrice: 55000, marketPrice: 75000, stockQty: 142, vectorMask: 18,
         ingredients: ['ING-01', 'ING-03'],
-        media: [
-            { type: 'image', url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=500' },
-            { type: 'image', url: 'https://images.unsplash.com/photo-1629198688000-71f23e745b6e?auto=format&fit=crop&q=80&w=500' }
-        ],
-        reviews: [
-            { id: 'R1', user: 'Siti A.', rating: 5, text: 'Jerawat kempes dalam 3 hari!', source: 'Shopee', isVerified: true, timestamp: Date.now() - 100000 },
-            { id: 'R2', user: 'Budi S.', rating: 4, text: 'Pengiriman agak lama tapi barang ori.', source: 'Tokopedia', isVerified: true, timestamp: Date.now() - 500000 }
-        ],
-        benefitClaims: ["99% Acne Reduction", "Non-Comedogenic Tested"]
+        media: [{ type: 'image', url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=500' }],
+        reviews: [{ id: 'R1', user: 'Siti A.', rating: 5, text: 'Jerawat kempes!', source: 'Shopee', isVerified: true, timestamp: Date.now() }],
+        benefitClaims: ["Acne Reduction", "Sebum Control"],
+        usage: [
+            { order: 1, text: "Cleanse face", time: 'BOTH' },
+            { order: 2, text: "Apply 2-3 drops", time: 'BOTH' },
+            { order: 3, text: "Massage gently", time: 'BOTH' }
+        ]
     },
-    // More products can be added here for volume...
+    {
+        id: 'L-02', sku: 'GH-SOME-001', name: 'Niacinamide Barrier', brand: 'SOMETHINC',
+        basePrice: 85000, marketPrice: 115000, stockQty: 89, vectorMask: 22,
+        ingredients: ['ING-01', 'ING-04', 'ING-06'],
+        media: [{ type: 'image', url: 'https://images.unsplash.com/photo-1601049541289-9b3b7d5d7fb5?auto=format&fit=crop&q=80&w=500' }],
+        reviews: [{ id: 'R2', user: 'Budi', rating: 5, text: 'Tekstur ringan.', source: 'Tokopedia', isVerified: true, timestamp: Date.now() }],
+        benefitClaims: ["Brightening", "Skin Barrier"],
+        usage: [{ order: 1, text: "Use after toner", time: 'BOTH' }, { order: 2, text: "Follow with moisturizer", time: 'BOTH' }]
+    },
+    {
+        id: 'L-03', sku: 'GH-AVO-001', name: 'Miraculous Retinol', brand: 'AVOSKIN',
+        basePrice: 110000, marketPrice: 149000, stockQty: 34, vectorMask: 40,
+        ingredients: ['ING-05', 'ING-02'],
+        media: [{ type: 'image', url: 'https://images.unsplash.com/photo-1571781348782-92c8812e8836?auto=format&fit=crop&q=80&w=500' }],
+        reviews: [{ id: 'R3', user: 'Dina', rating: 4, text: 'Efektif tapi tingling.', source: 'GlowHub', isVerified: true, timestamp: Date.now() }],
+        benefitClaims: ["Anti-Aging", "Cell Renewal"],
+        usage: [{ order: 1, text: "Apply thin layer", time: 'PM' }, { order: 2, text: "MUST use sunscreen next day", time: 'AM' }]
+    },
+    {
+        id: 'L-04', sku: 'GH-AZA-001', name: 'Hydrasoothe Gel', brand: 'AZARINE',
+        basePrice: 45000, marketPrice: 65000, stockQty: 210, vectorMask: 26,
+        ingredients: ['ING-02', 'ING-06'],
+        media: [{ type: 'image', url: 'https://images.unsplash.com/photo-1629198688000-71f23e745b6e?auto=format&fit=crop&q=80&w=500' }],
+        reviews: [],
+        benefitClaims: ["Soothing", "Oil Free"],
+        usage: [{ order: 1, text: "Apply liberally", time: 'AM' }]
+    }
 ];
 
-// --- 3. LOGIC HOOKS (The Engines) ---
+// --- 3. LOGIC ENGINES ---
 
-// Engine 1: Stock Sync Simulation
 export function useSupplyChainResonance(initialStock: number) {
     const [stock, setStock] = useState(initialStock);
     const [status, setStatus] = useState<'SYNCED' | 'UPDATING'>('SYNCED');
 
     useEffect(() => {
-        // Simulate random purchases globally
+        setStock(initialStock); // Reset when product changes
         const interval = setInterval(() => {
-            if (Math.random() > 0.7) {
+            if (Math.random() > 0.8) {
                 setStatus('UPDATING');
                 setTimeout(() => {
-                    setStock(prev => Math.max(0, prev - Math.floor(Math.random() * 3)));
+                    setStock(prev => Math.max(0, prev - 1));
                     setStatus('SYNCED');
                 }, 800);
             }
-        }, 5000);
+        }, 8000);
         return () => clearInterval(interval);
-    }, []);
+    }, [initialStock]);
 
     const stockStatus = useMemo(() => {
-        if (stock <= 0) return { label: 'OUT OF STOCK', color: 'text-gray-400', bg: 'bg-gray-100', actionable: false };
-        if (stock < 20) return { label: 'LOW STOCK', color: 'text-amber-600', bg: 'bg-amber-100', actionable: true };
-        return { label: 'AVAILABLE', color: 'text-emerald-600', bg: 'bg-emerald-100', actionable: true };
+        if (stock <= 0) return { label: 'HABIS', color: 'text-gray-400', bg: 'bg-gray-100', actionable: false };
+        if (stock < 20) return { label: 'STOK MENIPIS', color: 'text-amber-600', bg: 'bg-amber-100', actionable: true };
+        return { label: 'TERSEDIA', color: 'text-emerald-600', bg: 'bg-emerald-100', actionable: true };
     }, [stock]);
 
     return { stock, status, stockStatus };
 }
 
-// Engine 2: Profit Calculator
 export function useMarginVelocity(basePrice: number) {
-    const [sellingPrice, setSellingPrice] = useState(basePrice * 1.2); // Default 20% margin
+    const [sellingPrice, setSellingPrice] = useState(basePrice * 1.25);
+
+    // Reset when product changes
+    useEffect(() => { setSellingPrice(basePrice * 1.25); }, [basePrice]);
 
     const metrics = useMemo(() => {
         const profit = sellingPrice - basePrice;
         const margin = (profit / sellingPrice) * 100;
-        const roi = (profit / basePrice) * 100;
-
-        return {
-            profit: profit,
-            margin: margin.toFixed(1),
-            roi: roi.toFixed(1),
-            isHealthy: margin >= 15
-        };
+        return { profit, margin: margin.toFixed(1), isHealthy: margin >= 15 };
     }, [basePrice, sellingPrice]);
 
     return { sellingPrice, setSellingPrice, metrics };
 }
 
-// Engine 3: Ingredient Analysis
 export function useDermalGraph(ingredientIds: string[]) {
-    return useMemo(() => {
-        return ingredientIds.map(id => _INGREDIENT_DB[id]).filter(Boolean);
-    }, [ingredientIds]);
+    return useMemo(() => ingredientIds.map(id => _INGREDIENT_DB[id]).filter(Boolean), [ingredientIds]);
 }
 
-// Helper to get Product
+// SIMILARITY ENGINE: Finds products with overlapping ingredients/functions
+export function getRelatedProducts(currentId: string): ProductTelemetry[] {
+    const current = _PRODUCT_DB.find(p => p.id === currentId);
+    if (!current) return [];
+
+    return _PRODUCT_DB
+        .filter(p => p.id !== currentId)
+        .map(p => {
+            // Jaccard Index Logic (Simplified)
+            const shared = p.ingredients.filter(i => current.ingredients.includes(i)).length;
+            return { product: p, score: shared };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+        .map(x => x.product);
+}
+
 export function getProductById(id: string) {
     return _PRODUCT_DB.find(p => p.id === id) || _PRODUCT_DB[0];
 }
