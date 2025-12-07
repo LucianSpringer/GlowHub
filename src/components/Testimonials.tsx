@@ -44,10 +44,10 @@ export const Testimonials = ({ onProductSelect }: TestimonialsProps) => {
                             {/* ACTIONABLE CART ICON */}
                             <button
                                 onClick={() => t.productId && onProductSelect(t.productId)}
-                                className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-100 group-hover:text-[#FF6B9D] transition-all cursor-pointer z-20"
+                                className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-sm text-slate-400 hover:text-white hover:bg-[#FF6B9D] rounded-full shadow-md border border-slate-100 transition-all z-20"
                                 title="Shop this product"
                             >
-                                <ShoppingBag size={40} />
+                                <ShoppingBag size={20} />
                             </button>
 
                             <div className="flex gap-1 mb-4 text-yellow-400">
