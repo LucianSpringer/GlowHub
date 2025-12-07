@@ -28,8 +28,8 @@ export interface Review {
     source: 'GlowHub' | 'Shopee' | 'Tokopedia';
     isVerified: boolean;
     timestamp: number;
-    productId?: string;
-    productName?: string;
+    productId: string;
+    productName: string;
 }
 
 export interface UsageStep {

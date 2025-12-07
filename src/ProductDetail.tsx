@@ -35,7 +35,8 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
     const [orderSuccess, setOrderSuccess] = useState<OrderSummary | null>(null);
 
     // Handle molecule click
-    const handleMoleculeSelect = (ingredientId: string, _ingredientName: string) => {
+    const handleMoleculeSelect = (ingredientId: string, _ingredientName: string, e?: React.MouseEvent) => {
+        e?.stopPropagation();
         onMoleculeSelect(ingredientId);
     };
 
