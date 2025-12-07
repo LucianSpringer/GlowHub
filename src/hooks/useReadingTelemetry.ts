@@ -20,7 +20,7 @@ interface ReadingTelemetryState {
 }
 
 interface UseReadingTelemetryReturn extends ReadingTelemetryState {
-    containerRef: React.RefObject<HTMLDivElement>;
+    containerRef: React.RefObject<HTMLDivElement | null>;
     getSegmentRef: (index: number) => (el: HTMLDivElement | null) => void;
     resetTelemetry: () => void;
 }

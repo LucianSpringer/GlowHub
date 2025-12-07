@@ -146,6 +146,10 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
+  const handleMoleculeSelect = (id: string) => {
+    setActiveMolecule(id);
+  };
+
   // Cart Handlers
   const handleAddToCart = (product: ProductTelemetry) => {
     const result = cart.addToCart(product);
@@ -309,6 +313,7 @@ export default function App() {
             isDropshipper={isDropshipper}
             onBack={() => setView('LANDING')}
             onSelectProduct={handleProductSelect}
+            onMoleculeSelect={handleMoleculeSelect}
           />
           {/* Molecule Discovery Overlay */}
           {activeMolecule && (

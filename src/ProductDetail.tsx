@@ -13,13 +13,13 @@ import {
 import type { ProductTelemetry } from './ProductTelemetry';
 import { CheckoutSimulationModal, type OrderSummary } from './commerce/CheckoutSimulationModal';
 import { ActiveMoleculeNode } from './commerce/MoleculeDiscoveryComponents';
-import { MoleculeDiscoveryOverlay } from './commerce/MoleculeDiscoveryOverlay';
 
-export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelectProduct }: {
+export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelectProduct, onMoleculeSelect }: {
     product: ProductTelemetry,
     isDropshipper?: boolean,
     onBack: () => void,
-    onSelectProduct: (id: string) => void
+    onSelectProduct: (id: string) => void,
+    onMoleculeSelect: (id: string) => void
 }) => {
 
     // Engine Wiring
@@ -34,12 +34,9 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
     const [quantity, setQuantity] = useState(1);
     const [orderSuccess, setOrderSuccess] = useState<OrderSummary | null>(null);
 
-    // Molecule Discovery State
-    const [moleculeFilter, setMoleculeFilter] = useState<{ id: string; name: string } | null>(null);
-
     // Handle molecule click
-    const handleMoleculeSelect = (ingredientId: string, ingredientName: string) => {
-        setMoleculeFilter({ id: ingredientId, name: ingredientName });
+    const handleMoleculeSelect = (ingredientId: string, _ingredientName: string) => {
+        onMoleculeSelect(ingredientId);
     };
 
     // Handle checkout confirmation
@@ -304,18 +301,7 @@ export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelect
                 onConfirmOrder={handleConfirmOrder}
             />
 
-            {/* Molecule Discovery Overlay */}
-            {moleculeFilter && (
-                <MoleculeDiscoveryOverlay
-                    ingredientId={moleculeFilter.id}
-                    currentProductId={product.id}
-                    onClose={() => setMoleculeFilter(null)}
-                    onSelectProduct={(id: string) => {
-                        setMoleculeFilter(null);
-                        onSelectProduct(id);
-                    }}
-                />
-            )}
+
         </div>
     );
 };
