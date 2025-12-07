@@ -134,14 +134,8 @@ export default function App() {
   }, []);
 
   const handleProductSelect = (id: string) => {
-    // GhostClickPrevention: Validate product exists
-    const product = getProductById(id);
-    if (!product) {
-      console.warn(`[GhostClickPrevention] Product ${id} not found`);
-      // TODO: Could show toast notification here
-      return;
-    }
     setSelectedProductId(id);
+    setActiveMolecule(null); // Tutup overlay jika ada
     setView('PRODUCT');
     window.scrollTo(0, 0);
   };
@@ -313,13 +307,13 @@ export default function App() {
             isDropshipper={isDropshipper}
             onBack={() => setView('LANDING')}
             onSelectProduct={handleProductSelect}
-            onMoleculeSelect={handleMoleculeSelect}
+            onMoleculeSelect={(id) => setActiveMolecule(id)}
           />
           {/* Molecule Discovery Overlay */}
+          {/* FIX: Render Overlay Paling Atas */}
           {activeMolecule && (
             <MoleculeDiscoveryOverlay
               ingredientId={activeMolecule}
-              currentProductId={selectedProductId || undefined}
               onClose={() => setActiveMolecule(null)}
               onSelectProduct={handleProductSelect}
             />
