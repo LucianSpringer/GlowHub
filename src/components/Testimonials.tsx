@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Star, CheckCircle2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Star, ShoppingBag, ArrowRight } from 'lucide-react';
 import { getGlobalReviews, type Review } from '../ProductTelemetry';
 
 // FIX: Terima props navigasi dari App.tsx

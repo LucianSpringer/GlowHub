@@ -1,5 +1,5 @@
 import { X, ArrowRight, Beaker } from 'lucide-react';
-import { getProductById, PRODUCT_CATALOG, useDermalGraph } from '../ProductTelemetry';
+import { PRODUCT_CATALOG, useDermalGraph } from '../ProductTelemetry';
 
 export const MoleculeDiscoveryOverlay = ({ ingredientId, onClose, onSelectProduct }: any) => {
     // Cari info ingredient

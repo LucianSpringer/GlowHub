@@ -19,7 +19,7 @@ import { MoleculeDiscoveryOverlay } from './commerce/MoleculeDiscoveryOverlay';
 // Engines & Logic
 import { useBioMatrix, SkinVector } from './useBioMatrix';
 import { BioRadar } from './BioRadar';
-import { getProductById, type ProductTelemetry } from './ProductTelemetry';
+import { getProductById } from './ProductTelemetry';
 import { PermissionMask, type SecureSession } from './engines/AccessControlSystem';
 import { useCart } from './hooks/useCart';
 
@@ -120,7 +120,7 @@ export default function App() {
   const cart = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [cartPulse, setCartPulse] = useState(false);
+
 
   // Molecule Discovery State
   const [activeMolecule, setActiveMolecule] = useState<string | null>(null);
@@ -144,7 +144,7 @@ export default function App() {
     setActiveMolecule(id);
   };
 
-  // Cart Handlers
+  /*
   const handleAddToCart = (product: ProductTelemetry) => {
     const result = cart.addToCart(product);
     if (result.success) {
@@ -154,6 +154,7 @@ export default function App() {
     }
     return result;
   };
+  */
 
   const handleCheckout = () => {
     setIsCartOpen(false);
@@ -207,7 +208,7 @@ export default function App() {
         currentView={view}
         cartCount={cart.itemCount}
         onCartClick={() => setIsCartOpen(true)}
-        cartPulse={cartPulse}
+        cartPulse={false}
       />
 
       {/* Cart Drawer */}
@@ -307,7 +308,7 @@ export default function App() {
             isDropshipper={isDropshipper}
             onBack={() => setView('LANDING')}
             onSelectProduct={handleProductSelect}
-            onMoleculeSelect={(id) => setActiveMolecule(id)}
+            onMoleculeSelect={handleMoleculeSelect}
           />
           {/* Molecule Discovery Overlay */}
           {/* FIX: Render Overlay Paling Atas */}

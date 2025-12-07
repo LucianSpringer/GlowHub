@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Info, ArrowLeft, Download, Star, CheckCircle2, ShoppingCart, Clock } from 'lucide-react';
+import { } from 'react';
+import { Info, ArrowLeft } from 'lucide-react';
 import type { ProductTelemetry } from './ProductTelemetry';
-import { useSupplyChainResonance, useDermalGraph, useMarginVelocity, getRelatedProducts } from './ProductTelemetry';
+import { useDermalGraph, getRelatedProducts } from './ProductTelemetry';
 
 interface ProductDetailProps {
     product: ProductTelemetry;
@@ -12,9 +12,9 @@ interface ProductDetailProps {
     onMoleculeSelect: (ingredientId: string) => void;
 }
 
-export const ProductDetail = ({ product, isDropshipper = false, onBack, onSelectProduct, onMoleculeSelect }: ProductDetailProps) => {
-    const stockEngine = useSupplyChainResonance(product.stockQty);
-    const profitEngine = useMarginVelocity(product.basePrice);
+export const ProductDetail = ({ product, onBack, onSelectProduct, onMoleculeSelect }: ProductDetailProps) => {
+    // const stockEngine = useSupplyChainResonance(product.stockQty);
+    // const profitEngine = useMarginVelocity(product.basePrice);
     const ingredients = useDermalGraph(product.ingredients);
     const relatedProducts = getRelatedProducts(product.id);
 
