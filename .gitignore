@@ -7,6 +7,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Linting & Debug Artifacts (AGGRESSIVE)
+lint.json
+lint_*.txt
+admin_lint*.*
+engines_lint*.*
+*_final.txt
+*.report
+.eslintcache
+
+# Dependency Directories
 node_modules
 dist
 dist-ssr
