@@ -142,6 +142,74 @@ export function analyzeProductROI(transactions: Transaction[]): ProductROI[] {
     }).sort((a, b) => b.roiPercent - a.roiPercent);
 }
 
+// ============================================================================
+// PREDICTIVE MARGIN FORECASTER (Linear Regression)
+// ============================================================================
+
+export interface ProfitForecast {
+    predictedDailyProfit: number;
+    predictedWeeklyProfit: number;
+    confidenceScore: number;
+    trend: 'UP' | 'DOWN' | 'FLAT';
+    nextWeekROI: string;
+}
+
+export function forecastNextWeekProfit(dailyData: DailyDataPoint[]): ProfitForecast {
+    // Need at least 3 points for a trend
+    if (dailyData.length < 3) {
+        return {
+            predictedDailyProfit: 0,
+            predictedWeeklyProfit: 0,
+            confidenceScore: 0,
+            trend: 'FLAT',
+            nextWeekROI: '0%'
+        };
+    }
+
+    // Simple Linear Regression: y = mx + b
+    const n = dailyData.length;
+    let sumX = 0;
+    let sumY = 0;
+    let sumXY = 0;
+    let sumXX = 0;
+
+    // Use index as X (0, 1, 2...) ensuring chronological order
+    const sortedData = [...dailyData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    sortedData.forEach((point, i) => {
+        sumX += i;
+        sumY += point.profit;
+        sumXY += i * point.profit;
+        sumXX += i * i;
+    });
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    // Predict for next day (index = n)
+    const nextDayProfit = slope * n + intercept;
+    const weeklyProfitProjection = nextDayProfit * 7;
+
+    // Determine Trend
+    let trend: 'UP' | 'DOWN' | 'FLAT' = 'FLAT';
+    if (slope > 50000) trend = 'UP';
+    else if (slope < -50000) trend = 'DOWN';
+
+    // Calculate simulated ROI prediction
+    const averageCOGS = sortedData.reduce((sum, p) => sum + p.cogs, 0) / n;
+    const predictedROI = averageCOGS > 0
+        ? ((weeklyProfitProjection / (averageCOGS * 7)) * 100).toFixed(1)
+        : '0.0';
+
+    return {
+        predictedDailyProfit: Math.round(nextDayProfit),
+        predictedWeeklyProfit: Math.round(weeklyProfitProjection),
+        confidenceScore: 85, // Static confidence for this simple model
+        trend,
+        nextWeekROI: `${predictedROI}%`
+    };
+}
+
 // Mock Transaction Generator
 export function generateMockTransactions(days: number = 7): Transaction[] {
     const products = [

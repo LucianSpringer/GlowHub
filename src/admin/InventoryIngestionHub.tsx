@@ -1,186 +1,199 @@
-// InventoryIngestionHub.tsx - Product Management Panel
-import { useState, useEffect } from 'react';
-import { Upload, Package, Check, Archive, RefreshCw, Eye, Edit } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Upload, Archive, RefreshCw } from 'lucide-react';
 import {
     generateMockSupplierData,
-    loadProducts,
-    type NormalizedProduct,
-    type MarginConfig
+    normalizeSupplierFeed,
+    type NormalizedProduct
 } from '../engines/SupplierDataNormalization';
+import {
+    IngestionControlPanel,
+    ProductCuratorRow,
+    ProfitSimulationModal,
+    SyncLogTerminal
+} from './InventoryComponents';
+import { SupplierPerformanceWidget } from './SupplierPerformanceWidget';
+import { useGlobalStore } from '../context/GlobalStoreContext';
+// Engines
+import { analyzePriceElasticity } from '../engines/PriceIntelligence';
+import { calculateProductHealth } from '../engines/FeedbackAnalytics';
 
 export const InventoryIngestionHub = () => {
-    const [rawProducts, setRawProducts] = useState(generateMockSupplierData());
-    const [normalizedProducts, setNormalizedProducts] = useState<NormalizedProduct[]>([]);
+    // --- GLOBAL STORE CONNECTION ---
+    const {
+        products,
+        orders,
+        logs,
+        updateProductPrice,
+        isAutoPilot,
+        toggleAutoPilot
+    } = useGlobalStore();
+
+    // Local UI State
+    const [viewMode, setViewMode] = useState<'raw' | 'curated'>('curated');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [config] = useState<MarginConfig>({ ownerMarginPercent: 10, dropshipperMarginPercent: 20 });
-    const [view, setView] = useState<'raw' | 'curated'>('raw');
+    const [isSimulating, setIsSimulating] = useState(false);
 
+    // Normalized Data State (Local buffer for "Raw Feed" view)
+    const [rawProducts, setRawProducts] = useState<NormalizedProduct[]>([]);
+
+    // --- ANALYTICS PIPELINE ---
+    // 1. Price Intelligence
+    const priceSuggestions = useMemo(() => {
+        return analyzePriceElasticity(products, orders);
+    }, [products, orders]);
+
+    // 2. Feedback/Health Analytics
+    const productHealthMap = useMemo(() => {
+        return calculateProductHealth(products);
+    }, [products, orders]);
+
+    // --- INITIALIZATION ---
     useEffect(() => {
-        setNormalizedProducts(loadProducts(rawProducts, config));
-    }, [rawProducts, config]);
+        // Load Raw Feed (Simulated)
+        const rawData = generateMockSupplierData();
+        const normalized = normalizeSupplierFeed(JSON.stringify(rawData), 'JSON');
+        setRawProducts(normalized);
+    }, []);
 
-    const toggleSelect = (id: string) => {
-        const newSet = new Set(selectedIds);
-        if (newSet.has(id)) newSet.delete(id);
-        else newSet.add(id);
-        setSelectedIds(newSet);
+    // --- HANDLERS ---
+    const handleSelect = (id: string) => {
+        const newSelected = new Set(selectedIds);
+        if (newSelected.has(id)) newSelected.delete(id);
+        else newSelected.add(id);
+        setSelectedIds(newSelected);
     };
 
-    const selectAll = () => {
-        if (selectedIds.size === normalizedProducts.length) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(normalizedProducts.map(p => p.id)));
-        }
-    };
+    const handleBulkPriceUpdate = (marginPercent: number) => {
+        // Find selected products in the GLOBAL store
+        const selectedProducts = products.filter(p => selectedIds.has(p.id));
 
-    const handlePublish = () => {
-        setNormalizedProducts(prev => prev.map(p =>
-            selectedIds.has(p.id) ? { ...p, isActive: true } : p
-        ));
+        selectedProducts.forEach(p => {
+            // Mock cost: assume current price is 120% of cost. Cost = Price / 1.2
+            const approxCost = p.basePrice / 1.2;
+            const newPrice = Math.ceil(approxCost * (1 + marginPercent / 100));
+            updateProductPrice(p.id, newPrice);
+        });
+
+        setIsSimulating(false);
         setSelectedIds(new Set());
     };
 
-    const handleArchive = () => {
-        setNormalizedProducts(prev => prev.map(p =>
-            selectedIds.has(p.id) ? { ...p, isActive: false } : p
-        ));
-        setSelectedIds(new Set());
-    };
+    // --- RENDER HELPERS ---
+    // Transform Global Products to Normalized Format for Table
+    const displayProducts: NormalizedProduct[] = viewMode === 'curated'
+        ? products.map(p => ({
+            id: p.id,
+            sku: p.sku,
+            name: p.name,
+            supplierPrice: p.basePrice * 0.8, // Mock supplier price
+            appBasePrice: p.basePrice,
+            recommendedSellingPrice: p.basePrice,
+            stockActual: p.stockQty,
+            stockBuffer: 5,
+            stockAvailable: p.stockQty,
+            category: 'Skincare',
+            imageUrl: p.media[0]?.url || '',
+            isActive: true, // Assuming global products are active
+            createdAt: 0 // Mock timestamp to avoid purity error
+        }))
+        : rawProducts;
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            {/* Header */}
-            <div className="p-6 border-b border-slate-100">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-indigo-500 p-2 rounded-xl text-white">
-                            <Upload size={24} />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-lg text-slate-900">Inventory Ingestion Hub</h3>
-                            <p className="text-xs text-slate-500">{normalizedProducts.length} products in catalog</p>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setView('raw')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${view === 'raw' ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600'
-                                }`}
-                        >
-                            <Eye size={12} className="inline mr-1" /> Raw Feed
-                        </button>
-                        <button
-                            onClick={() => setView('curated')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${view === 'curated' ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600'
-                                }`}
-                        >
-                            <Edit size={12} className="inline mr-1" /> Curated
-                        </button>
-                    </div>
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                    <IngestionControlPanel
+                        totalItems={displayProducts.length}
+                        viewMode={viewMode}
+                        setViewMode={setViewMode}
+                        onAutoPilotToggle={toggleAutoPilot}
+                        autoPilotEnabled={isAutoPilot}
+                    />
+                </div>
+                <div>
+                    {/* New Supplier Widget */}
+                    <SupplierPerformanceWidget />
                 </div>
             </div>
 
-            {/* Bulk Action Bar */}
-            {selectedIds.size > 0 && (
-                <div className="px-6 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
-                    <span className="text-sm text-indigo-700 font-medium">
-                        {selectedIds.size} selected
-                    </span>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handlePublish}
-                            className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                        >
-                            <Check size={12} /> Publish
-                        </button>
-                        <button
-                            onClick={handleArchive}
-                            className="px-3 py-1.5 bg-slate-500 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                        >
-                            <Archive size={12} /> Archive
-                        </button>
-                        <button
-                            className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                        >
-                            <RefreshCw size={12} /> Update Prices
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                {/* Bulk Actions Toolbar */}
+                {selectedIds.size > 0 && (
+                    <div className="bg-slate-900 text-white p-4 flex items-center justify-between animate-in slide-in-from-top-2">
+                        <div className="flex items-center gap-4">
+                            <span className="font-bold text-emerald-400">{selectedIds.size} Selected</span>
+                            <div className="h-4 w-px bg-slate-700" />
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setIsSimulating(true)}
+                                    className="px-3 py-1.5 bg-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-500 transition-colors flex items-center gap-2"
+                                >
+                                    <RefreshCw size={14} /> Update Prices
+                                </button>
+                                <button className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/30 transition-colors flex items-center gap-2">
+                                    <Archive size={14} /> Archive
+                                </button>
+                            </div>
+                        </div>
+                        <button onClick={() => setSelectedIds(new Set())} className="text-slate-500 hover:text-white">
+                            <Upload size={18} className="rotate-45" />
                         </button>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Product Table */}
-            <div className="overflow-x-auto">
-                <table className="w-full">
-                    <thead className="bg-slate-50 text-xs text-slate-500 uppercase">
-                        <tr>
-                            <th className="px-6 py-3 text-left">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedIds.size === normalizedProducts.length && normalizedProducts.length > 0}
-                                    onChange={selectAll}
-                                    className="rounded"
-                                />
-                            </th>
-                            <th className="px-6 py-3 text-left">Product</th>
-                            <th className="px-6 py-3 text-left">Supplier Price</th>
-                            <th className="px-6 py-3 text-left">App Price</th>
-                            <th className="px-6 py-3 text-left">Recommended</th>
-                            <th className="px-6 py-3 text-left">Stock</th>
-                            <th className="px-6 py-3 text-left">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {normalizedProducts.map(product => (
-                            <tr key={product.id} className="hover:bg-slate-50">
-                                <td className="px-6 py-4">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedIds.has(product.id)}
-                                        onChange={() => toggleSelect(product.id)}
-                                        className="rounded"
-                                    />
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                                            <Package size={16} className="text-slate-400" />
-                                        </div>
-                                        <div>
-                                            <div className="font-medium text-slate-900 text-sm">{product.name}</div>
-                                            <div className="text-xs text-slate-500">{product.sku}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-red-500 line-through">
-                                    Rp {product.supplierPrice.toLocaleString()}
-                                </td>
-                                <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                                    Rp {product.appBasePrice.toLocaleString()}
-                                </td>
-                                <td className="px-6 py-4 text-sm font-bold text-emerald-600">
-                                    Rp {product.recommendedSellingPrice.toLocaleString()}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="text-sm">
-                                        <span className="font-medium">{product.stockAvailable}</span>
-                                        <span className="text-slate-400 text-xs ml-1">({product.stockBuffer} buffer)</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${product.isActive
-                                            ? 'bg-emerald-100 text-emerald-700'
-                                            : 'bg-slate-100 text-slate-500'
-                                        }`}>
-                                        {product.isActive ? 'ACTIVE' : 'ARCHIVED'}
-                                    </span>
-                                </td>
+                {/* Table */}
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-12">
+                                    <div className="w-4 h-4 border-2 border-slate-300 rounded" />
+                                </th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Product</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Logic</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Margin Health</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Stock Pulse</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {displayProducts.map(product => {
+                                const health = productHealthMap.get(product.id);
+                                const suggestion = priceSuggestions.find(s => s.productId === product.id);
+
+                                return (
+                                    <ProductCuratorRow
+                                        key={product.id}
+                                        product={product}
+                                        isSelected={selectedIds.has(product.id)}
+                                        onSelect={() => handleSelect(product.id)}
+                                        onPriceUpdate={(price) => updateProductPrice(product.id, price)}
+                                        onStatusToggle={() => { }}
+                                        // Intelligence Props
+                                        velocityScore={health ? (health.totalReviews * 0.1) : 0} // Mock velocity based on activity
+                                        sentimentScore={health?.sentimentScore}
+                                        suggestion={suggestion ? {
+                                            type: suggestion.actionType,
+                                            reason: suggestion.reason,
+                                            price: suggestion.suggestedPrice
+                                        } : undefined}
+                                    />
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            {/* Logs from Global Store */}
+            <SyncLogTerminal logs={logs} />
+
+            <ProfitSimulationModal
+                isOpen={isSimulating}
+                onClose={() => setIsSimulating(false)}
+                onApply={handleBulkPriceUpdate}
+                selectedCount={selectedIds.size}
+            />
         </div>
     );
 };

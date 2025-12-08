@@ -206,13 +206,16 @@ export const generateThemeCSS = (theme: ThemeConfig): React.CSSProperties => ({
 // SEMANTIC VECTOR MAPPER (Routine Clustering)
 // ============================================================================
 
-// Synergy pairs for routine building
-const PRODUCT_SYNERGIES: Record<string, string[]> = {
+// [FIXED] Activated Synergy Config for Routine Clustering
+export const PRODUCT_SYNERGIES: Record<string, string[]> = {
     'Serum': ['Toner', 'Moisturizer', 'Essence'],
     'Toner': ['Cleanser', 'Serum'],
-    'Moisturizer': ['Serum', 'Sunscreen'],
-    'Cleanser': ['Toner', 'Oil Cleanser'],
-    'Sunscreen': ['Moisturizer']
+    'Moisturizer': ['Serum', 'Sunscreen', 'Face Oil'],
+    'Cleanser': ['Toner', 'Oil Cleanser', 'Micellar Water'],
+    'Sunscreen': ['Moisturizer', 'Vitamin C Serum'],
+    'Essence': ['Toner', 'Serum'],
+    'Face Oil': ['Moisturizer', 'Night Cream'],
+    'Mask': ['Cleanser', 'Toner']
 };
 
 /**
@@ -375,7 +378,7 @@ export const getAttributionForProduct = (productId: string): ConversionAttributi
 // COUPON GENERATION (Gamification)
 // ============================================================================
 
-export const generateCoupon = (articleId: string): {
+export const generateCoupon = (): {
     code: string;
     discount: number;
     expiresAt: number;

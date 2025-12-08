@@ -200,3 +200,22 @@ export function getProductsByIngredient(ingredientId: string, excludeProductId?:
 // Export ingredient database for molecule lookup
 export const INGREDIENT_DB = _INGREDIENT_DB;
 
+// --- 4. CATALOG MUTATION (Admin Ops) ---
+export function addProductToCatalog(product: ProductTelemetry) {
+    _PRODUCT_DB.push(product);
+}
+
+export function updateProductInCatalog(id: string, updates: Partial<ProductTelemetry>) {
+    const index = _PRODUCT_DB.findIndex(p => p.id === id);
+    if (index !== -1) {
+        _PRODUCT_DB[index] = { ..._PRODUCT_DB[index], ...updates };
+    }
+}
+
+export function removeProductFromCatalog(id: string) {
+    const index = _PRODUCT_DB.findIndex(p => p.id === id);
+    if (index !== -1) {
+        _PRODUCT_DB.splice(index, 1);
+    }
+}
+

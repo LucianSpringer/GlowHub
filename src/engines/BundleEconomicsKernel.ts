@@ -451,7 +451,7 @@ export const suggestNextProduct = (
 
     // Find missing routine steps in order
     const missingCategories: SkincareCategory[] = [];
-    for (const [cat, _order] of Object.entries(ROUTINE_ORDER)) {
+    for (const cat of Object.keys(ROUTINE_ORDER)) {
         if (!currentCategories.has(cat as SkincareCategory)) {
             missingCategories.push(cat as SkincareCategory);
         }
@@ -461,7 +461,7 @@ export const suggestNextProduct = (
     const priorityCategory = missingCategories[0];
 
     // Find candidates
-    let candidates = allProducts.filter(p =>
+    const candidates = allProducts.filter(p =>
         !currentIds.has(p.id) &&
         (!priorityCategory || p.category === priorityCategory)
     );

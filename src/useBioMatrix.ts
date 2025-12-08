@@ -86,7 +86,7 @@ export function useBioMatrix() {
 
     const activeMarkers = useMemo(() => {
         return Object.entries(SkinVector)
-            .filter(([_, flag]) => (activeMask & flag) !== 0)
+            .filter((entry) => (activeMask & entry[1]) !== 0)
             .map(([key]) => key);
     }, [activeMask]);
 

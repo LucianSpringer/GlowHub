@@ -1,33 +1,41 @@
 // LogisticsCommandCenter.tsx - Order Forwarder UI
 import { useState, useEffect } from 'react';
-import { Package, Truck, AlertCircle, Clock, Zap, RefreshCw } from 'lucide-react';
+import { Package, Truck, AlertCircle, Clock, Zap, RefreshCw, Activity, ChevronDown, Printer, FileText } from 'lucide-react';
 import {
     type DropshipOrder,
     OrderStatus,
     generateMockOrders,
-    batchProcessOrders
+    batchProcessOrders,
+    getSupplierHealth,
+    type SupplierHealth
 } from '../engines/OrderRelayProtocol';
 
 export const LogisticsCommandCenter = () => {
     const [orders, setOrders] = useState<DropshipOrder[]>([]);
     const [processing, setProcessing] = useState(false);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
-    const [supplierStatus, setSupplierStatus] = useState<'ONLINE' | 'OFFLINE' | 'SYNCING'>('ONLINE');
+    const [supplierHealth, setSupplierHealth] = useState<SupplierHealth>({
+        status: 'STABLE',
+        averageLatency: 200,
+        reliabilityScore: 100,
+        lastPing: Date.now()
+    });
+    const [showActionMenu, setShowActionMenu] = useState(false);
 
     useEffect(() => {
         setOrders(generateMockOrders(8));
         const interval = setInterval(() => {
-            const roll = Math.random();
-            setSupplierStatus(roll > 0.9 ? 'OFFLINE' : roll > 0.7 ? 'SYNCING' : 'ONLINE');
-        }, 10000);
+            setSupplierHealth(getSupplierHealth());
+        }, 2000);
         return () => clearInterval(interval);
     }, []);
 
     const pendingOrders = orders.filter(o => o.status === OrderStatus.PENDING);
 
     const handleBatchProcess = async () => {
-        if (supplierStatus === 'OFFLINE') return;
+        if (supplierHealth.status === 'DOWN') return;
         setProcessing(true);
+        setShowActionMenu(false);
 
         const result = await batchProcessOrders(pendingOrders, (current, total) => {
             setProgress({ current, total });
@@ -65,8 +73,18 @@ export const LogisticsCommandCenter = () => {
         }
     };
 
+    const getHealthColor = (status: string) => {
+        switch (status) {
+            case 'STABLE': return 'text-emerald-400';
+            case 'LATENCY': return 'text-yellow-400';
+            case 'DOWN': return 'text-red-400';
+            default: return 'text-slate-400';
+        }
+    };
+
     return (
-        <div className="bg-slate-900 rounded-2xl p-6 text-white">
+        <div className="bg-slate-900 rounded-2xl p-6 text-white overflow-visible">
+            {/* Header with Supplier Pulse */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
                     <div className="bg-blue-500 p-2 rounded-xl">
@@ -78,25 +96,25 @@ export const LogisticsCommandCenter = () => {
                     </div>
                 </div>
 
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${supplierStatus === 'ONLINE' ? 'bg-emerald-500/20 text-emerald-400' :
-                        supplierStatus === 'SYNCING' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-red-500/20 text-red-400'
-                    }`}>
-                    <div className={`w-2 h-2 rounded-full ${supplierStatus === 'ONLINE' ? 'bg-emerald-400' :
-                            supplierStatus === 'SYNCING' ? 'bg-yellow-400 animate-pulse' :
-                                'bg-red-400'
-                        }`} />
-                    Supplier: {supplierStatus}
+                {/* SupplierPulseIndicator */}
+                <div className="flex flex-col items-end">
+                    <div className={`flex items-center gap-2 ${getHealthColor(supplierHealth.status)}`}>
+                        <Activity size={16} className={supplierHealth.status !== 'DOWN' ? 'animate-pulse' : ''} />
+                        <span className="font-bold text-sm tracking-widest">{supplierHealth.status}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-mono">
+                        {supplierHealth.averageLatency}ms • Score: {supplierHealth.reliabilityScore}
+                    </div>
                 </div>
             </div>
 
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-2 mb-4">
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-2 mb-4 scrollbar-thin scrollbar-thumb-slate-700">
                 {orders.slice(0, 6).map(order => (
-                    <div key={order.id} className="bg-slate-800 rounded-xl p-3 flex items-center justify-between">
+                    <div key={order.id} className="bg-slate-800 rounded-xl p-3 flex items-center justify-between group hover:bg-slate-750 transition-colors">
                         <div className="flex items-center gap-3">
                             {statusIcon(order.status)}
                             <div>
-                                <div className="font-medium text-sm">{order.productName}</div>
+                                <div className="font-medium text-sm group-hover:text-blue-400 transition-colors">{order.productName}</div>
                                 <div className="text-xs text-slate-400">
                                     {order.quantity}x • Rp {order.totalPrice.toLocaleString()}
                                 </div>
@@ -106,32 +124,57 @@ export const LogisticsCommandCenter = () => {
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${urgencyColor(order.urgencyLevel)}`}>
                                 {order.urgencyLevel}
                             </span>
-                            <span className="text-xs text-slate-500">{order.status}</span>
                         </div>
                     </div>
                 ))}
             </div>
 
-            <button
-                onClick={handleBatchProcess}
-                disabled={processing || supplierStatus === 'OFFLINE' || pendingOrders.length === 0}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${processing || supplierStatus === 'OFFLINE'
-                        ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90'
-                    }`}
-            >
-                {processing ? (
-                    <>
-                        <RefreshCw size={16} className="animate-spin" />
-                        Processing {progress.current}/{progress.total}
-                    </>
-                ) : (
-                    <>
-                        <Zap size={16} />
-                        Batch Process ({pendingOrders.length})
-                    </>
+            {/* SmartBatchActionPanel */}
+            <div className="relative">
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleBatchProcess}
+                        disabled={processing || supplierHealth.status === 'DOWN' || pendingOrders.length === 0}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${processing || supplierHealth.status === 'DOWN'
+                            ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 shadow-lg shadow-blue-500/20'
+                            }`}
+                    >
+                        {processing ? (
+                            <>
+                                <RefreshCw size={16} className="animate-spin" />
+                                Processing {progress.current}/{progress.total}
+                            </>
+                        ) : (
+                            <>
+                                <Zap size={16} />
+                                Auto-Relay ({pendingOrders.length})
+                            </>
+                        )}
+                    </button>
+
+                    <button
+                        onClick={() => setShowActionMenu(!showActionMenu)}
+                        className="bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl px-4 transition-colors"
+                    >
+                        <ChevronDown size={20} className={`transition-transformDuration-300 ${showActionMenu ? 'rotate-180' : ''}`} />
+                    </button>
+                </div>
+
+                {/* Dropdown Menu */}
+                {showActionMenu && (
+                    <div className="absolute bottom-full mb-2 right-0 w-full bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden z-10 animate-in fade-in slide-in-from-bottom-2">
+                        <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-left">
+                            <Printer size={16} className="text-purple-400" />
+                            <span>Print Shipping Manifest</span>
+                        </button>
+                        <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-left border-t border-slate-700">
+                            <FileText size={16} className="text-orange-400" />
+                            <span>Invoice Pooling (Net-30)</span>
+                        </button>
+                    </div>
                 )}
-            </button>
+            </div>
 
             <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-700">
                 <div className="text-center">

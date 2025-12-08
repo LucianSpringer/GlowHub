@@ -1,38 +1,77 @@
 // FinancialYieldDashboard.tsx - Profit Tracker UI
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { TrendingUp, DollarSign, Target, Activity } from 'lucide-react';
 import {
-    generateMockTransactions,
     calculateMetrics,
     aggregateByDay,
     type FinancialMetrics,
-    type DailyDataPoint
+    type DailyDataPoint,
+    forecastNextWeekProfit,
+    type ProfitForecast
 } from '../engines/MarginVelocityEngine';
 import { useProfitChart } from '../hooks/useProfitChart';
+import { useGlobalStore } from '../context/GlobalStoreContext';
 
 export const FinancialYieldDashboard = () => {
+    // --- GLOBAL STORE CONNECTION ---
+    const { orders } = useGlobalStore();
+
+    // Internal state
     const [metrics, setMetrics] = useState<FinancialMetrics | null>(null);
     const [dailyData, setDailyData] = useState<DailyDataPoint[]>([]);
-    const [cashflowTicker, setCashflowTicker] = useState<string[]>([]);
+    const [forecast, setForecast] = useState<ProfitForecast | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
+    // Filter relevant orders (PROCESSED or PENDING)
+    const validTransactions = useMemo(() =>
+        orders.filter(o => o.status !== 'PENDING'),
+        [orders]);
+
     useEffect(() => {
-        const transactions = generateMockTransactions(7);
-        setMetrics(calculateMetrics(transactions, 5000000, 168));
-        setDailyData(aggregateByDay(transactions));
+        // Transform Global Orders to Engine Format
+        // Engine expects: { id, timestamp, totalAmount, grossMargin, items: [] }
+        const engineTransactions = validTransactions.flatMap(o =>
+            o.items.map(i => ({
+                id: o.id,
+                timestamp: o.timestamp,
+                totalAmount: o.totalAmount, // This might duplicate revenue if not careful, better to split by item price if available, else keep generic
+                grossMargin: (o.totalAmount * 0.25) / o.items.length, // Split margin across items
+                productId: i.productId,
+                productName: 'Unknown Product', // We'd need product lookup here ideally
+                basePrice: 0,
+                sellingPrice: 0,
+                quantity: i.quantity,
+                items: [] // Legacy field to satisfy type if needed, or we adjust type
+            }))
+        );
 
-        const interval = setInterval(() => {
-            const amounts = [15000, 25000, 35000, 50000, 75000, 12000, 28000];
-            const amount = amounts[Math.floor(Math.random() * amounts.length)];
-            setCashflowTicker(prev => [`+Rp ${amount.toLocaleString()}`, ...prev.slice(0, 4)]);
-        }, 3000);
+        if (engineTransactions.length > 0) {
+            const data = aggregateByDay(engineTransactions);
+            const calcMetrics = calculateMetrics(engineTransactions, 5000000, 168);
 
-        return () => clearInterval(interval);
-    }, []);
+            setMetrics(calcMetrics);
+            setDailyData(data);
+            setForecast(forecastNextWeekProfit(data));
+        } else {
+            // Fallback for empty state (mock small data or just zeroes)
+            setMetrics({
+                netProfit: 0,
+                profitPerHour: 0,
+                roiPercent: 0,
+                goalProgress: 0,
+                totalRevenue: 0,
+                totalCOGS: 0,
+                profitMarginPercent: 0
+            });
+        }
+    }, [validTransactions]);
 
     useProfitChart(canvasRef, dailyData);
 
     if (!metrics) return <div className="bg-slate-900 rounded-2xl p-6 animate-pulse h-80" />;
+
+    // Latest Cashflow Ticker from Orders
+    const recentSales = orders.slice(0, 5);
 
     return (
         <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white">
@@ -54,6 +93,27 @@ export const FinancialYieldDashboard = () => {
                     <div className="text-[10px] text-slate-500 uppercase">ROI</div>
                 </div>
             </div>
+
+            {/* AI Profit Forecast Widget */}
+            {forecast && (
+                <div className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-xl p-3 mb-4">
+                    <div className="flex justify-between items-start mb-2">
+                        <div>
+                            <div className="text-[10px] text-indigo-300 uppercase tracking-wider font-bold mb-1">AI Prediction (Next 7 Days)</div>
+                            <div className="text-xl font-mono font-bold text-white">
+                                Rp {forecast.predictedWeeklyProfit.toLocaleString()}
+                            </div>
+                        </div>
+                        <div className={`text-right ${forecast.trend === 'UP' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            <div className="flex items-center justify-end gap-1">
+                                {forecast.trend === 'UP' ? <TrendingUp size={14} /> : <Activity size={14} />}
+                                <span className="font-bold text-xs">{forecast.nextWeekROI} ROI</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400">Confidence: {forecast.confidenceScore}%</div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="bg-slate-800/50 rounded-xl p-4 mb-4">
                 <div className="flex justify-between items-center mb-2">
@@ -105,16 +165,17 @@ export const FinancialYieldDashboard = () => {
             </div>
 
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
-                <div className="text-[10px] text-emerald-400 uppercase mb-2">Cashflow Stream</div>
+                <div className="text-[10px] text-emerald-400 uppercase mb-2">Live Transactions</div>
                 <div className="flex gap-2 overflow-hidden">
-                    {cashflowTicker.map((amount, i) => (
+                    {recentSales.map((order, i) => (
                         <span
-                            key={i}
+                            key={order.id}
                             className={`text-sm font-mono font-bold text-emerald-400 whitespace-nowrap transition-opacity ${i === 0 ? 'animate-pulse' : 'opacity-50'}`}
                         >
-                            {amount}
+                            +Rp {order.totalAmount.toLocaleString()}
                         </span>
                     ))}
+                    {recentSales.length === 0 && <span className="text-xs text-slate-500">Waiting for sales...</span>}
                 </div>
             </div>
         </div>

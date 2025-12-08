@@ -94,7 +94,8 @@ export async function dispatchNotifications(
         // Simulate network delay (50-200ms per batch)
         await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 150));
 
-        for (const user of batch) {
+        for (const _user of batch) {
+            void _user;
             // Simulate success/fail rate (95% success)
             if (Math.random() > 0.05) {
                 status.sent++;

@@ -5,6 +5,7 @@ import { FinancialYieldDashboard } from './FinancialYieldDashboard';
 import { HighVelocityVault } from './HighVelocityVault';
 import { CopywritingForge } from './CopywritingForge';
 import { ViralVectorLinker } from './ViralVectorLinker';
+import { MarginOptimizerWidget } from './MarginOptimizerWidget';
 import { LayoutDashboard, ArrowLeft, Sun, Moon } from 'lucide-react';
 
 interface DropshipperDashboardProps {
@@ -66,9 +67,10 @@ export const DropshipperDashboard = ({ onBack }: DropshipperDashboardProps) => {
                     </div>
 
                     {/* Right Column - Marketing Tools */}
-                    <div className="space-y-6">
+                    <div className="space-y-6 h-full flex flex-col">
                         <CopywritingForge />
                         <ViralVectorLinker />
+                        <MarginOptimizerWidget />
                     </div>
                 </div>
 

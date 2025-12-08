@@ -57,13 +57,70 @@ export function calculateUrgency(createdAt: number): DropshipOrder['urgencyLevel
     return 'LOW';
 }
 
+// ============================================================================
+// RELIABILITY SCORING ALGORITHM (Supplier Pulse)
+// ============================================================================
+
+export interface SupplierHealth {
+    status: 'STABLE' | 'LATENCY' | 'DOWN';
+    averageLatency: number;
+    reliabilityScore: number; // 0-100
+    lastPing: number;
+}
+
+// Rolling buffer for latency history
+const LATENCY_HISTORY: number[] = [200, 150, 180, 220, 190]; // Seed with some healthy data
+const MAX_HISTORY = 10;
+
+export function recordLatency(ms: number) {
+    LATENCY_HISTORY.push(ms);
+    if (LATENCY_HISTORY.length > MAX_HISTORY) {
+        LATENCY_HISTORY.shift();
+    }
+}
+
+export function getSupplierHealth(): SupplierHealth {
+    if (LATENCY_HISTORY.length === 0) {
+        return { status: 'STABLE', averageLatency: 0, reliabilityScore: 100, lastPing: Date.now() };
+    }
+
+    const avgLatency = LATENCY_HISTORY.reduce((a, b) => a + b, 0) / LATENCY_HISTORY.length;
+    let status: SupplierHealth['status'] = 'STABLE';
+    let score = 100;
+
+    // Reliability Logic
+    if (avgLatency > 2000) { // Timeout equivalent
+        status = 'DOWN';
+        score = 30;
+    } else if (avgLatency > 1000) {
+        status = 'LATENCY';
+        score = 75;
+    }
+
+    // Weighted penalty for recent spikes
+    const recent = LATENCY_HISTORY[LATENCY_HISTORY.length - 1];
+    if (recent > 1500) score -= 15;
+
+    return {
+        status,
+        averageLatency: Math.round(avgLatency),
+        reliabilityScore: Math.max(0, score),
+        lastPing: Date.now()
+    };
+}
+
 // Simulated API Transmission with Probability Decay
 export function transmitToSupplier(order: DropshipOrder): Promise<{ success: boolean; newStatus: OrderStatus }> {
     return new Promise((resolve) => {
-        // Random latency simulation (500ms - 2000ms)
-        const latency = 500 + Math.random() * 1500;
+        // Debug Log
+        console.debug(`[OrderRelay] Transmitting ${order.id}...`);
+        // Random latency simulation (500ms - 2000ms) with occasional spikes
+        const isSpike = Math.random() > 0.9;
+        const latency = isSpike ? 2500 : (200 + Math.random() * 800);
 
         setTimeout(() => {
+            recordLatency(latency);
+
             // 80% success, 20% needs review
             const roll = Math.random();
             if (roll < 0.80) {

@@ -105,8 +105,11 @@ const Footer = () => (
 );
 
 // --- MAIN APP ---
+// --- MAIN APP ---
 
-export default function App() {
+import { GlobalStoreProvider, useGlobalStore } from './context/GlobalStoreContext';
+
+function AppContent() {
   const [scrolled, setScrolled] = useState(false);
   const [view, setView] = useState<'LANDING' | 'PRODUCT' | 'DASHBOARD' | 'ADMIN' | 'SHOP'>('LANDING');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -121,11 +124,13 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-
   // Molecule Discovery State
   const [activeMolecule, setActiveMolecule] = useState<string | null>(null);
 
   const engine = useBioMatrix();
+
+  // --- GLOBAL STORE INTEGRATION ---
+  const { addOrder } = useGlobalStore();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -135,7 +140,7 @@ export default function App() {
 
   const handleProductSelect = (id: string) => {
     setSelectedProductId(id);
-    setActiveMolecule(null); // Tutup overlay jika ada
+    setActiveMolecule(null);
     setView('PRODUCT');
     window.scrollTo(0, 0);
   };
@@ -144,36 +149,28 @@ export default function App() {
     setActiveMolecule(id);
   };
 
-  /*
-  const handleAddToCart = (product: ProductTelemetry) => {
-    const result = cart.addToCart(product);
-    if (result.success) {
-      // Pulse animation
-      setCartPulse(true);
-      setTimeout(() => setCartPulse(false), 500);
-    }
-    return result;
-  };
-  */
-
   const handleCheckout = () => {
     setIsCartOpen(false);
     setIsCheckoutOpen(true);
   };
 
-  const handleCheckoutSuccess = (_orderId: string) => {
+  const handleCheckoutSuccess = () => {
+    // Push to Global Store (Mocking an order object)
+    addOrder({
+      items: cart.items.map(i => ({ productId: i.product.id, quantity: i.quantity })),
+      totalAmount: cart.totalPrice,
+      customerName: session?.userAlias || 'Guest Customer'
+    });
+
     cart.clearCart();
     setIsCheckoutOpen(false);
-    // Could navigate to order success page
   };
 
   const handleAuthAction = () => {
     if (session) {
-      // Logout Logic
       setSession(null);
       setView('LANDING');
     } else {
-      // Open Gate
       setGateMode('LOGIN');
       setIsGateOpen(true);
     }
@@ -181,7 +178,6 @@ export default function App() {
 
   const handleSessionEstablished = (newSession: SecureSession) => {
     setSession(newSession);
-    // Auto-redirect if has Dashboard permission
     if (newSession.roleMask & PermissionMask.VIEW_DASHBOARD) {
       setView('DASHBOARD');
     }
@@ -310,8 +306,6 @@ export default function App() {
             onSelectProduct={handleProductSelect}
             onMoleculeSelect={handleMoleculeSelect}
           />
-          {/* Molecule Discovery Overlay */}
-          {/* FIX: Render Overlay Paling Atas */}
           {activeMolecule && (
             <MoleculeDiscoveryOverlay
               ingredientId={activeMolecule}
@@ -329,5 +323,13 @@ export default function App() {
       )}
       <Footer />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <GlobalStoreProvider>
+      <AppContent />
+    </GlobalStoreProvider>
   );
 }

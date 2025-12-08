@@ -13,8 +13,7 @@ interface ProductDetailProps {
 }
 
 export const ProductDetail = ({ product, onBack, onSelectProduct, onMoleculeSelect }: ProductDetailProps) => {
-    // const stockEngine = useSupplyChainResonance(product.stockQty);
-    // const profitEngine = useMarginVelocity(product.basePrice);
+    // Active Engine Wiring
     const ingredients = useDermalGraph(product.ingredients);
     const relatedProducts = getRelatedProducts(product.id);
 

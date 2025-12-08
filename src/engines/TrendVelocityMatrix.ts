@@ -5,6 +5,7 @@ export interface SaleTransaction {
     productId: string;
     quantity: number;
     timestamp: number;
+    shippingCity?: string;
 }
 
 export interface VelocityProduct {
@@ -86,6 +87,7 @@ export const generateSparklineData = (
     const dayMs = 24 * 60 * 60 * 1000;
 
     return Array.from({ length: 7 }, (_, i) => {
+        void _;
         const dayStart = now - ((6 - i) * dayMs);
         const dayEnd = dayStart + dayMs;
 
@@ -144,6 +146,37 @@ export const detectSlowMovers = (
     return velocityProducts.filter(p => p.velocityScore < threshold && p.stock > 100);
 };
 
+// ============================================================================
+// GEO-SPATIAL DEMAND MAPPER (Regional Hotspots)
+// ============================================================================
+
+const CITIES = ['Surabaya', 'Jakarta', 'Bandung', 'Medan', 'Semarang', 'Makassar', 'Denpasar', 'Yogyakarta'];
+
+export function calculateRegionalHotspots(transactions: SaleTransaction[]): string {
+    const cityCounts = new Map<string, number>();
+    let totalWithCity = 0;
+
+    transactions.forEach(tx => {
+        if (tx.shippingCity) {
+            cityCounts.set(tx.shippingCity, (cityCounts.get(tx.shippingCity) || 0) + tx.quantity);
+            totalWithCity += tx.quantity;
+        }
+    });
+
+    if (totalWithCity === 0) return "Data Regional Belum Tersedia";
+
+    const sorted = Array.from(cityCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+    if (sorted.length === 0) return "No data";
+
+    return sorted.map(([city, count]) => {
+        const percent = Math.round((count / totalWithCity) * 100);
+        return `${city} (${percent}%)`;
+    }).join(' - ');
+}
+
 // Generate mock transactions
 export const generateMockTransactions = (productIds: string[], count: number = 500): SaleTransaction[] => {
     const now = Date.now();
@@ -152,7 +185,8 @@ export const generateMockTransactions = (productIds: string[], count: number = 5
     return Array.from({ length: count }, () => ({
         productId: productIds[Math.floor(Math.random() * productIds.length)],
         quantity: Math.floor(Math.random() * 5) + 1,
-        timestamp: now - Math.random() * weekMs
+        timestamp: now - Math.random() * weekMs,
+        shippingCity: Math.random() > 0.2 ? CITIES[Math.floor(Math.random() * CITIES.length)] : undefined
     }));
 };
 

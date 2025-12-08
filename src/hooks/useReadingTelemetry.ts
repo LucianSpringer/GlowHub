@@ -45,7 +45,8 @@ export const useReadingTelemetry = (content: string): UseReadingTelemetryReturn 
     const segmentRefs = useRef<Map<number, HTMLDivElement>>(new Map());
     const activeSegmentRef = useRef<number | null>(null);
     const lastActivityRef = useRef<number>(Date.now());
-    const intervalRef = useRef<number | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const intervalRef = useRef<any>(null);
 
     // Initialize segments from content
     useEffect(() => {
@@ -154,7 +155,7 @@ export const useReadingTelemetry = (content: string): UseReadingTelemetryReturn 
                     hasUnlockedReward: prev.hasUnlockedReward || hasUnlockedReward
                 };
             });
-        }, UPDATE_INTERVAL_MS);
+        }, UPDATE_INTERVAL_MS) as unknown as number;
 
         return () => {
             if (intervalRef.current) {

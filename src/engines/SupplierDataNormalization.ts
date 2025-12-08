@@ -104,12 +104,26 @@ export function transformProduct(
     };
 }
 
-// LOAD - Batch transform multiple products
-export function loadProducts(
-    rawProducts: RawSupplierProduct[],
+// Load - Connects Extraction and Transformation
+export function normalizeSupplierFeed(
+    rawData: string,
+    format: 'CSV' | 'JSON',
     config: MarginConfig = DEFAULT_CONFIG
 ): NormalizedProduct[] {
+    const rawProducts = extractSupplierData(rawData, format);
     return rawProducts.map(p => transformProduct(p, config));
+}
+
+export function calculateRecommendedPrice(cost: number, marginPercent: number): number {
+    const markup = cost * (marginPercent / 100);
+    return Math.ceil(cost + markup);
+}
+
+// Stock Status Helper
+export function getStockStatus(stock: number): 'AMPLE' | 'LIMITED' | 'CRITICAL' {
+    if (stock <= 10) return 'CRITICAL';
+    if (stock <= 50) return 'LIMITED';
+    return 'AMPLE';
 }
 
 // Price Competitiveness Check
@@ -122,7 +136,7 @@ export function checkPriceCompetitiveness(
     if (product.recommendedSellingPrice > marketplaceCap) {
         return {
             isCompetitive: false,
-            warning: `Harga tidak kompetitif! Rp ${priceDiff.toLocaleString()} di atas rata-rata pasar.`,
+            warning: `Overpriced! +Rp ${priceDiff.toLocaleString()} vs Market`,
             priceDiff
         };
     }
