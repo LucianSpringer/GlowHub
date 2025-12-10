@@ -1,6 +1,13 @@
 // YieldOptimizationKernel.ts - Autonomous Pricing Logic
 // Pattern: Control Loop (Sensors -> Logic -> Actuator)
 
+// Pricing sensors for margin sensitivity simulation
+export interface PricingSensors {
+    averageVelocity: number;
+    currentROI: number;
+    inventoryLevel: number;
+}
+
 export interface YieldSensors {
     currentROI: number;
     avgVelocity: number;           // 0-1 normalized velocity score
