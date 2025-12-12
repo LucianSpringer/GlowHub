@@ -1,20 +1,17 @@
-# Logs
+# Logs & Debug Artifacts (WAJIB ADA)
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Linting & Debug Artifacts (AGGRESSIVE)
+# Block Lint dumps
 lint.json
 lint_*.txt
-admin_lint*.*
-engines_lint*.*
+*_lint.*
 *_final.txt
 *.report
-.eslintcache
 
 # Dependency Directories
 node_modules
@@ -22,13 +19,8 @@ dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# Editor directories
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
